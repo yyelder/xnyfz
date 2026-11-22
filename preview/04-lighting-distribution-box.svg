@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 830" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">
+  <defs>
+    <pattern id="gridMinor" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e6ecf4" stroke-width="1"/>
+    </pattern>
+    <pattern id="gridMajor" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#gridMinor)"/>
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#d5dfea" stroke-width="1.2"/>
+    </pattern>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#1b2a3a" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="1280" height="830" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1280" height="830" fill="url(#gridMajor)"/>
+  <g class="wires"><g class="wire" data-net="L" style="cursor:default"><line x1="150" y1="70" x2="306" y2="70" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="306" y1="148" x2="306" y2="70" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><circle cx="306" cy="70" r="2.55" fill="#d63a3a" opacity="1"/></g><g class="wire" data-net="N-in" style="cursor:default"><line x1="354" y1="70" x2="1150" y2="70" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="354" y1="148" x2="354" y2="70" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><circle cx="354" cy="70" r="2.55" fill="#2f6fb5" opacity="1"/></g><g class="wire" data-net="n-qf0-1" style="cursor:default"><line x1="306" y1="212" x2="306" y2="308" stroke="#d63a3a" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-qf0-2" style="cursor:default"><line x1="354" y1="212" x2="354" y2="308" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-bus-L" style="cursor:default"><line x1="306" y1="429" x2="880" y2="429" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="306" y1="372" x2="306" y2="429" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="520" y1="448" x2="520" y2="429" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="700" y1="448" x2="700" y2="429" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="880" y1="448" x2="880" y2="429" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><circle cx="306" cy="429" r="2.55" fill="#d63a3a" opacity="1"/><circle cx="520" cy="429" r="2.55" fill="#d63a3a" opacity="1"/><circle cx="700" cy="429" r="2.55" fill="#d63a3a" opacity="1"/><circle cx="880" cy="429" r="2.55" fill="#d63a3a" opacity="1"/></g><g class="wire" data-net="N" style="cursor:default"><line x1="354" y1="372" x2="980" y2="372" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="980" y1="372" x2="980" y2="712" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="520" y1="712" x2="980" y2="712" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="520" y1="676" x2="520" y2="712" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="700" y1="676" x2="700" y2="712" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="880" y1="676" x2="880" y2="712" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><circle cx="354" cy="372" r="2.55" fill="#2f6fb5" opacity="1"/><circle cx="520" cy="712" r="2.55" fill="#2f6fb5" opacity="1"/><circle cx="700" cy="712" r="2.55" fill="#2f6fb5" opacity="1"/><circle cx="880" cy="712" r="2.55" fill="#2f6fb5" opacity="1"/></g><g class="wire" data-net="n-el1" style="cursor:default"><line x1="520" y1="512" x2="520" y2="604" stroke="#d63a3a" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-xs1" style="cursor:default"><line x1="700" y1="512" x2="700" y2="604" stroke="#d63a3a" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-el2" style="cursor:default"><line x1="880" y1="512" x2="880" y2="604" stroke="#d63a3a" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g></g>
+  <g class="wire-labels"><text x="150" y="58" font-size="12" font-weight="600" fill="#d63a3a" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">L 进线</text><text x="1150" y="58" font-size="12" font-weight="600" fill="#2f6fb5" text-anchor="end" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">N 进线</text><text x="986" y="560" font-size="12" font-weight="600" fill="#2f6fb5" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">N 母线</text></g>
+  <g class="devices">
+      <g class="dev" data-dev="QF0" style="cursor:pointer">
+        
+        
+        <g transform="translate(330 180) rotate(0)">
+      <line x1="-24" y1="-32" x2="-24" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="-24" y1="13" x2="-24" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="-24" cy="-13" r="2.2" fill="#182635"/>
+      <g transform="rotate(0 -24 13)"><line x1="-24" y1="13" x2="-24" y2="-12" stroke="#182635" stroke-width="2.4" stroke-linecap="round" /></g>
+      <line x1="24" y1="-32" x2="24" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="24" y1="13" x2="24" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="24" cy="-13" r="2.2" fill="#182635"/>
+      <g transform="rotate(0 24 13)"><line x1="24" y1="13" x2="24" y2="-12" stroke="#182635" stroke-width="2.4" stroke-linecap="round" /></g><line x1="-24" y1="0" x2="24" y2="0" stroke="#8798aa" stroke-width="1.2" stroke-dasharray="4 3"/><rect x="30" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/></g>
+        <text x="400" y="184" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">QF0 总开关</text>
+        <circle cx="306" cy="148" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF0:1"/><circle cx="354" cy="148" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF0:3"/><circle cx="306" cy="212" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF0:2"/><circle cx="354" cy="212" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF0:4"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="QF1" style="cursor:pointer">
+        
+        
+        <g transform="translate(330 340) rotate(0)">
+      <line x1="-24" y1="-32" x2="-24" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="-24" y1="13" x2="-24" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="-24" cy="-13" r="2.2" fill="#182635"/>
+      <g transform="rotate(0 -24 13)"><line x1="-24" y1="13" x2="-24" y2="-12" stroke="#182635" stroke-width="2.4" stroke-linecap="round" /></g>
+      <line x1="24" y1="-32" x2="24" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="24" y1="13" x2="24" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="24" cy="-13" r="2.2" fill="#182635"/>
+      <g transform="rotate(0 24 13)"><line x1="24" y1="13" x2="24" y2="-12" stroke="#182635" stroke-width="2.4" stroke-linecap="round" /></g><line x1="-24" y1="0" x2="24" y2="0" stroke="#8798aa" stroke-width="1.2" stroke-dasharray="4 3"/><rect x="30" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/><text x="0" y="2" font-size="8" font-weight="500" fill="#41556b" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei',sans-serif">RCD</text><text x="0" y="60" font-size="10" font-weight="500" fill="#41556b" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei',sans-serif"></text></g>
+        <text x="400" y="344" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">QF1 漏保</text>
+        <circle cx="306" cy="308" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF1:1"/><circle cx="354" cy="308" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF1:3"/><circle cx="306" cy="372" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF1:2"/><circle cx="354" cy="372" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF1:4"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="QF2" style="cursor:pointer">
+        
+        
+        <g transform="translate(520 480) rotate(0)">
+      <line x1="0" y1="-32" x2="0" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="0" y1="13" x2="0" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="0" cy="-13" r="2.3" fill="#182635"/>
+      <g transform="rotate(0 0 13)"><line x1="0" y1="13" x2="0" y2="-12" stroke="#182635" stroke-width="2.6" stroke-linecap="round" /></g>
+      <rect x="5" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/>
+    </g>
+        <text x="534" y="484" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">QF2</text>
+        <circle cx="520" cy="448" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF2:1"/><circle cx="520" cy="512" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF2:2"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="QF3" style="cursor:pointer">
+        
+        
+        <g transform="translate(700 480) rotate(0)">
+      <line x1="0" y1="-32" x2="0" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="0" y1="13" x2="0" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="0" cy="-13" r="2.3" fill="#182635"/>
+      <g transform="rotate(0 0 13)"><line x1="0" y1="13" x2="0" y2="-12" stroke="#182635" stroke-width="2.6" stroke-linecap="round" /></g>
+      <rect x="5" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/>
+    </g>
+        <text x="714" y="484" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">QF3</text>
+        <circle cx="700" cy="448" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF3:1"/><circle cx="700" cy="512" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF3:2"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="QF4" style="cursor:pointer">
+        
+        
+        <g transform="translate(880 480) rotate(0)">
+      <line x1="0" y1="-32" x2="0" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="0" y1="13" x2="0" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="0" cy="-13" r="2.3" fill="#182635"/>
+      <g transform="rotate(0 0 13)"><line x1="0" y1="13" x2="0" y2="-12" stroke="#182635" stroke-width="2.6" stroke-linecap="round" /></g>
+      <rect x="5" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/>
+    </g>
+        <text x="894" y="484" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">QF4</text>
+        <circle cx="880" cy="448" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF4:1"/><circle cx="880" cy="512" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF4:2"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="EL1" style="cursor:pointer">
+        
+        
+        <g transform="translate(520 640) rotate(0)">
+      <line x1="0" y1="-36" x2="0" y2="-20" stroke="#d98218" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="0" y1="20" x2="0" y2="36" stroke="#d98218" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="0" cy="0" r="34" fill="rgba(245,195,59,.45)"/>
+      <circle cx="0" cy="0" r="20" fill="#f5c33b" stroke="#b8860b" stroke-width="2.2"/>
+      <line x1="-12" y1="-12" x2="12" y2="12" stroke="#8a6208" stroke-width="1.8" stroke-linecap="round" />
+      <line x1="-12" y1="12" x2="12" y2="-12" stroke="#8a6208" stroke-width="1.8" stroke-linecap="round" />
+    </g>
+        <text x="554" y="644" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">EL1 照明</text>
+        <circle cx="520" cy="604" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="EL1:1"/><circle cx="520" cy="676" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="EL1:2"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="XS1" style="cursor:pointer">
+        
+        
+        <g transform="translate(700 640) rotate(0)">
+      <line x1="0" y1="-36" x2="0" y2="-22" stroke="#d98218" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="0" y1="22" x2="0" y2="36" stroke="#d98218" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="0" cy="0" r="22" fill="#fdf3e0" stroke="#d98218" stroke-width="2.2"/>
+      <line x1="-7" y1="-8" x2="-7" y2="6" stroke="#d98218" stroke-width="3" stroke-linecap="round" />
+      <line x1="7" y1="-8" x2="7" y2="6" stroke="#d98218" stroke-width="3" stroke-linecap="round" />
+      <text x="0" y="17" font-size="9" font-weight="600" fill="#d98218" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei',sans-serif">XS</text>
+    </g>
+        <text x="734" y="644" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">XS1 插座</text>
+        <circle cx="700" cy="604" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="XS1:1"/><circle cx="700" cy="676" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="XS1:2"/>
+        
+        
+      </g>
+      <g class="dev" data-dev="EL2" style="cursor:pointer">
+        
+        
+        <g transform="translate(880 640) rotate(0)">
+      <line x1="0" y1="-36" x2="0" y2="-20" stroke="#d98218" stroke-width="2.2" stroke-linecap="round" />
+      <line x1="0" y1="20" x2="0" y2="36" stroke="#d98218" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="0" cy="0" r="34" fill="rgba(245,195,59,.45)"/>
+      <circle cx="0" cy="0" r="20" fill="#f5c33b" stroke="#b8860b" stroke-width="2.2"/>
+      <line x1="-12" y1="-12" x2="12" y2="12" stroke="#8a6208" stroke-width="1.8" stroke-linecap="round" />
+      <line x1="-12" y1="12" x2="12" y2="-12" stroke="#8a6208" stroke-width="1.8" stroke-linecap="round" />
+    </g>
+        <text x="914" y="644" font-size="13" font-weight="700" fill="#182635" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">EL2 照明</text>
+        <circle cx="880" cy="604" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="EL2:1"/><circle cx="880" cy="676" r="3" fill="#f8fafc" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="EL2:2"/>
+        
+        
+      </g></g>
+  <g class="annotations"><text x="200" y="780" font-size="12" font-weight="500" fill="#41556b" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">① 分级保护：总开关 → 漏电保护 → 分支断路器</text><text x="460" y="730" font-size="12" font-weight="500" fill="#41556b" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">② 支路一：照明回路</text><text x="640" y="760" font-size="12" font-weight="500" fill="#41556b" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">③ 支路二：插座回路（须经漏电保护）</text><text x="840" y="730" font-size="12" font-weight="500" fill="#41556b" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">④ 支路三：另一照明回路</text></g>
+  
+</svg>

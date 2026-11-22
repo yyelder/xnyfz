@@ -1,0 +1,61 @@
+{
+  "name": "scj-elec-sim",
+  "version": "1.0.0",
+  "private": true,
+  "description": "省常技电气仿真 — 常用照明电路与电力拖动电路的交互式仿真教学平台",
+  "main": "electron/main.js",
+  "author": "省常技电气教研组",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k -n WEB,APP -c cyan,magenta \"npm:dev:web\" \"npm:dev:app\"",
+    "dev:web": "vite --config frontend/vite.config.js",
+    "dev:app": "wait-on tcp:127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
+    "build:web": "vite build --config frontend/vite.config.js",
+    "build": "npm run build:web && electron-builder",
+    "start": "electron .",
+    "test:engine": "node scripts/test-engine.mjs",
+    "test:linkage": "node scripts/test-linkage.mjs && node scripts/test-rename-linkage.mjs",
+    "test:wiring": "node scripts/test-wiring-ux.mjs",
+    "test:newfeatures": "node scripts/test-new-features.mjs",
+    "test:notestag": "node scripts/test-notes-tag.mjs",
+    "test:e2e": "node scripts/e2e-editor.mjs && node scripts/e2e-features.mjs && node scripts/e2e-linkage.mjs && node scripts/e2e-props.mjs && node scripts/e2e-wiring-ux.mjs && node scripts/e2e-new-features.mjs && node scripts/e2e-notes-tag.mjs && node scripts/e2e-marquee-course.mjs && node scripts/e2e-sidebar-fold.mjs",
+    "seed:dump": "node scripts/dump-db.mjs"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "playwright-core": "^1.65.1",
+    "vite": "^6.0.5",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "cn.scj.elec.sim",
+    "productName": "省常技电气仿真",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "electron/**/*",
+      "shared/**/*",
+      "resources/**/*",
+      "frontend/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "省常技电气仿真"
+    }
+  }
+}

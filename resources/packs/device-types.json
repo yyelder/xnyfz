@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 1,
+  "pack": "core-devices",
+  "name": "常用低压电器元件库",
+  "version": "1.5.0",
+  "note": "元件库为纯数据描述：引脚坐标、导电策略、符号名称。新增元件只需在此追加条目并实现对应符号绘制，无需改动仿真引擎。",
+  "types": [
+    {
+      "id": "qf_1p",
+      "name": "断路器（单极）",
+      "short": "QF",
+      "category": "protection",
+      "role": "breaker",
+      "symbol": "breaker1",
+      "pins": [
+        { "id": "1", "x": 0, "y": -32, "dir": "up" },
+        { "id": "2", "x": 0, "y": 32, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "initial": "open",
+      "labelPos": "left",
+      "desc": "具有过载与短路保护功能，可作为照明回路的总开关或支路开关。"
+    },
+    {
+      "id": "qf_2p",
+      "name": "断路器（两极）",
+      "short": "QF",
+      "category": "protection",
+      "role": "breaker",
+      "symbol": "breaker2",
+      "pins": [
+        { "id": "1", "x": -24, "y": -32, "dir": "up" },
+        { "id": "3", "x": 24, "y": -32, "dir": "up" },
+        { "id": "2", "x": -24, "y": 32, "dir": "down" },
+        { "id": "4", "x": 24, "y": 32, "dir": "down" }
+      ],
+      "poles": [["1", "2"], ["3", "4"]],
+      "initial": "open",
+      "labelGap": 46, "labelPos": "left",
+      "desc": "同时接通相线与中性线，用于单相回路总开关。"
+    },
+    {
+      "id": "qf_3p",
+      "name": "断路器（三极）",
+      "short": "QF",
+      "category": "protection",
+      "role": "breaker",
+      "symbol": "breaker3",
+      "pins": [
+        { "id": "in1", "x": -80, "y": -32, "dir": "up" },
+        { "id": "in2", "x": 0, "y": -32, "dir": "up" },
+        { "id": "in3", "x": 80, "y": -32, "dir": "up" },
+        { "id": "out1", "x": -80, "y": 32, "dir": "down" },
+        { "id": "out2", "x": 0, "y": 32, "dir": "down" },
+        { "id": "out3", "x": 80, "y": 32, "dir": "down" }
+      ],
+      "poles": [["in1", "out1"], ["in2", "out2"], ["in3", "out3"]],
+      "initial": "open",
+      "labelPos": "left",
+      "desc": "三相电源总开关，兼作短路与过载保护。"
+    },
+    {
+      "id": "rcd_2p",
+      "name": "漏电保护器（两极）",
+      "short": "QF",
+      "category": "protection",
+      "role": "breaker",
+      "symbol": "rcd2",
+      "pins": [
+        { "id": "1", "x": -24, "y": -32, "dir": "up" },
+        { "id": "3", "x": 24, "y": -32, "dir": "up" },
+        { "id": "2", "x": -24, "y": 32, "dir": "down" },
+        { "id": "4", "x": 24, "y": 32, "dir": "down" }
+      ],
+      "poles": [["1", "2"], ["3", "4"]],
+      "initial": "open",
+      "labelGap": 46, "labelPos": "left",
+      "desc": "带剩余电流动作保护，动作电流一般为 30mA。"
+    },
+    {
+      "id": "fu_1p",
+      "name": "熔断器",
+      "short": "FU",
+      "category": "protection",
+      "role": "fuse",
+      "symbol": "fuse",
+      "pins": [
+        { "id": "1", "x": 0, "y": -34, "dir": "up" },
+        { "id": "2", "x": 0, "y": 34, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelPos": "left",
+      "desc": "短路保护元件，熔体熔断后回路断开。"
+    },
+    {
+      "id": "sa_1p",
+      "name": "单联开关",
+      "short": "SA",
+      "category": "switch",
+      "role": "switch",
+      "symbol": "switch1",
+      "pins": [
+        { "id": "1", "x": 0, "y": -30, "dir": "up" },
+        { "id": "2", "x": 0, "y": 30, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "initial": "open",
+      "labelPos": "left",
+      "desc": "单极手动开关，用于照明灯的控制。"
+    },
+    {
+      "id": "sa_2way",
+      "name": "双控开关（双联）",
+      "short": "SA",
+      "category": "switch",
+      "role": "switch",
+      "variant": "2way",
+      "symbol": "switch2way",
+      "pins": [
+        { "id": "1", "x": 0, "y": -30, "dir": "up" },
+        { "id": "2", "x": -28, "y": 30, "dir": "down" },
+        { "id": "3", "x": 28, "y": 30, "dir": "down" }
+      ],
+      "polesA": [["1", "2"]],
+      "polesB": [["1", "3"]],
+      "initial": "a",
+      "labelGap": 34, "labelPos": "left",
+      "desc": "单刀双掷开关，两只配合可实现两地控制一盏灯。"
+    },
+    {
+      "id": "sb_no",
+      "name": "按钮（常开）",
+      "short": "SB",
+      "category": "control",
+      "role": "button",
+      "symbol": "button_no",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 48, "labelPos": "left",
+      "desc": "按下接通、松开断开的按钮，用作启动按钮。"
+    },
+    {
+      "id": "sb_nc",
+      "name": "按钮（常闭）",
+      "short": "SB",
+      "category": "control",
+      "role": "button",
+      "nc": true,
+      "symbol": "button_nc",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 48, "labelPos": "left",
+      "desc": "按下断开、松开闭合的按钮，用作停止按钮。"
+    },
+    {
+      "id": "km_coil",
+      "name": "接触器线圈",
+      "short": "KM",
+      "category": "control",
+      "role": "load",
+      "symbol": "coil",
+      "pins": [
+        { "id": "A1", "x": 0, "y": -36, "dir": "up" },
+        { "id": "A2", "x": 0, "y": 36, "dir": "down" }
+      ],
+      "loadPins": ["A1", "A2"],
+      "showPinLabels": true,
+      "labelGap": 42, "labelPos": "left",
+      "desc": "线圈得电后吸合，带动同组主触点与辅助触点动作。"
+    },
+    {
+      "id": "kt_coil",
+      "name": "时间继电器线圈",
+      "short": "KT",
+      "category": "control",
+      "role": "load",
+      "timer": true,
+      "delay": 3,
+      "symbol": "coil",
+      "pins": [
+        { "id": "A1", "x": 0, "y": -36, "dir": "up" },
+        { "id": "A2", "x": 0, "y": 36, "dir": "down" }
+      ],
+      "loadPins": ["A1", "A2"],
+      "showPinLabels": true,
+      "labelPos": "left",
+      "desc": "通电后开始计时，达到整定时间后带动延时触点动作。"
+    },
+    {
+      "id": "km_no",
+      "name": "接触器辅助常开触点",
+      "short": "KM",
+      "category": "control",
+      "role": "contact",
+      "symbol": "contact_no",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 26, "labelPos": "left",
+      "desc": "与线圈同组，线圈得电时闭合，用于自锁或联锁。"
+    },
+    {
+      "id": "km_nc",
+      "name": "接触器辅助常闭触点",
+      "short": "KM",
+      "category": "control",
+      "role": "contact",
+      "nc": true,
+      "symbol": "contact_nc",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 26, "labelPos": "left",
+      "desc": "与线圈同组，线圈得电时断开，用于互锁。"
+    },
+    {
+      "id": "km_no_3p",
+      "name": "接触器主触点（三极）",
+      "short": "KM",
+      "category": "power",
+      "role": "contact",
+      "symbol": "contact3_no",
+      "pins": [
+        { "id": "in1", "x": -80, "y": -30, "dir": "up" },
+        { "id": "in2", "x": 0, "y": -30, "dir": "up" },
+        { "id": "in3", "x": 80, "y": -30, "dir": "up" },
+        { "id": "out1", "x": -80, "y": 30, "dir": "down" },
+        { "id": "out2", "x": 0, "y": 30, "dir": "down" },
+        { "id": "out3", "x": 80, "y": 30, "dir": "down" }
+      ],
+      "poles": [["in1", "out1"], ["in2", "out2"], ["in3", "out3"]],
+      "labelPos": "left",
+      "desc": "接通与断开电动机主电路，允许通过大电流。"
+    },
+    {
+      "id": "ka_coil",
+      "name": "中间继电器线圈",
+      "short": "KA",
+      "category": "control",
+      "role": "load",
+      "symbol": "coil",
+      "pins": [
+        { "id": "A1", "x": 0, "y": -36, "dir": "up" },
+        { "id": "A2", "x": 0, "y": 36, "dir": "down" }
+      ],
+      "loadPins": ["A1", "A2"],
+      "showPinLabels": true,
+      "labelGap": 42, "labelPos": "left",
+      "desc": "中间继电器线圈，得电后带动同编号的 KA 触点动作，用于控制信号的中转与放大。"
+    },
+    {
+      "id": "ka_no",
+      "name": "中间继电器常开触点",
+      "short": "KA",
+      "category": "control",
+      "role": "contact",
+      "symbol": "contact_no",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 26, "labelPos": "left",
+      "desc": "与 KA 线圈同编号，线圈得电时闭合，用于扩展触点数量或信号中转。"
+    },
+    {
+      "id": "ka_nc",
+      "name": "中间继电器常闭触点",
+      "short": "KA",
+      "category": "control",
+      "role": "contact",
+      "nc": true,
+      "symbol": "contact_nc",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 26, "labelPos": "left",
+      "desc": "与 KA 线圈同编号，线圈得电时断开，用于互锁或信号切换。"
+    },
+    {
+      "id": "fr_main",
+      "name": "热继电器热元件（三极）",
+      "short": "FR",
+      "category": "power",
+      "role": "passive",
+      "symbol": "thermal3",
+      "pins": [
+        { "id": "in1", "x": -80, "y": -30, "dir": "up" },
+        { "id": "in2", "x": 0, "y": -30, "dir": "up" },
+        { "id": "in3", "x": 80, "y": -30, "dir": "up" },
+        { "id": "out1", "x": -80, "y": 30, "dir": "down" },
+        { "id": "out2", "x": 0, "y": 30, "dir": "down" },
+        { "id": "out3", "x": 80, "y": 30, "dir": "down" }
+      ],
+      "poles": [["in1", "out1"], ["in2", "out2"], ["in3", "out3"]],
+      "labelPos": "left",
+      "desc": "电动机过载时热元件发热，推动常闭触点断开，切断控制电路。"
+    },
+    {
+      "id": "fr_nc",
+      "name": "热继电器常闭触点",
+      "short": "FR",
+      "category": "control",
+      "role": "thermal",
+      "nc": true,
+      "symbol": "thermal_nc",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 32, "labelPos": "left",
+      "desc": "过载脱扣后断开，使控制电路失电，实现过载保护。"
+    },
+    {
+      "id": "kt_no",
+      "name": "时间继电器延时闭合常开触点",
+      "short": "KT",
+      "category": "control",
+      "role": "contact",
+      "delay": true,
+      "symbol": "kt_no",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 42, "labelPos": "left",
+      "desc": "线圈通电达到整定时间后闭合。"
+    },
+    {
+      "id": "kt_nc",
+      "name": "时间继电器延时断开常闭触点",
+      "short": "KT",
+      "category": "control",
+      "role": "contact",
+      "delay": true,
+      "nc": true,
+      "symbol": "kt_nc",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelGap": 42, "labelPos": "left",
+      "desc": "线圈通电达到整定时间后断开。"
+    },
+    {
+      "id": "el_lamp",
+      "name": "照明灯",
+      "short": "EL",
+      "category": "load",
+      "role": "load",
+      "symbol": "lamp",
+      "pins": [
+        { "id": "1", "x": 0, "y": -36, "dir": "up" },
+        { "id": "2", "x": 0, "y": 36, "dir": "down" }
+      ],
+      "loadPins": ["1", "2"],
+      "labelGap": 34, "labelPos": "left",
+      "desc": "白炽灯或灯具，两端加上额定电压即发光。"
+    },
+    {
+      "id": "el_tube",
+      "name": "荧光灯管",
+      "short": "EL",
+      "category": "load",
+      "role": "load",
+      "symbol": "tube",
+      "pins": [
+        { "id": "1", "x": 0, "y": -56, "dir": "up" },
+        { "id": "2", "x": 0, "y": 56, "dir": "down" }
+      ],
+      "loadPins": ["1", "2"],
+      "labelPos": "left",
+      "desc": "荧光灯管，需与镇流器、启辉器配合使用。"
+    },
+    {
+      "id": "ballast",
+      "name": "镇流器",
+      "short": "L",
+      "category": "load",
+      "role": "passive",
+      "symbol": "inductor",
+      "pins": [
+        { "id": "1", "x": 0, "y": -44, "dir": "up" },
+        { "id": "2", "x": 0, "y": 44, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelPos": "left",
+      "desc": "限制灯管电流，并在启辉器断开的瞬间产生高压点亮灯管。"
+    },
+    {
+      "id": "starter",
+      "name": "启辉器",
+      "short": "S",
+      "category": "load",
+      "role": "decor",
+      "symbol": "starter",
+      "pins": [
+        { "id": "1", "x": 0, "y": -26, "dir": "up" },
+        { "id": "2", "x": 0, "y": 26, "dir": "down" }
+      ],
+      "labelPos": "left",
+      "desc": "启动元件，仿真中按已启辉处理（仅作接线示意）。"
+    },
+    {
+      "id": "m_3ph",
+      "name": "三相异步电动机",
+      "short": "M",
+      "category": "load",
+      "role": "motor",
+      "symbol": "motor3",
+      "pins": [
+        { "id": "U1", "x": -80, "y": -44, "dir": "up" },
+        { "id": "V1", "x": 0, "y": -44, "dir": "up" },
+        { "id": "W1", "x": 80, "y": -44, "dir": "up" }
+      ],
+      "showPinLabels": true,
+      "labelPos": "left",
+      "desc": "三相笼型异步电动机，三相电源齐全即运转，相序决定转向。"
+    },
+    {
+      "id": "m_3ph_6",
+      "name": "三相异步电动机（六端子）",
+      "short": "M",
+      "category": "load",
+      "role": "motor",
+      "symbol": "motor6",
+      "pins": [
+        { "id": "U1", "x": -80, "y": -44, "dir": "up" },
+        { "id": "V1", "x": 0, "y": -44, "dir": "up" },
+        { "id": "W1", "x": 80, "y": -44, "dir": "up" },
+        { "id": "W2", "x": -80, "y": 44, "dir": "down" },
+        { "id": "U2", "x": 0, "y": 44, "dir": "down" },
+        { "id": "V2", "x": 80, "y": 44, "dir": "down" }
+      ],
+      "showPinLabels": true,
+      "labelPos": "left",
+      "desc": "六个端子全部引出，可接成星形（Y）或三角形（Δ）。"
+    },
+    {
+      "id": "socket_1p",
+      "name": "单相插座",
+      "short": "XS",
+      "category": "load",
+      "role": "load",
+      "symbol": "socket",
+      "pins": [
+        { "id": "1", "x": 0, "y": -36, "dir": "up" },
+        { "id": "2", "x": 0, "y": 36, "dir": "down" }
+      ],
+      "loadPins": ["1", "2"],
+      "labelGap": 34, "labelPos": "left",
+      "desc": "单相三孔插座，作为用电负荷接在支路末端。"
+    },
+    {
+      "id": "voltmeter",
+      "name": "电压表",
+      "short": "PV",
+      "category": "instrument",
+      "role": "passive",
+      "symbol": "meter_v",
+      "pins": [
+        { "id": "1", "x": 0, "y": -30, "dir": "up" },
+        { "id": "2", "x": 0, "y": 30, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelPos": "left",
+      "desc": "并联接入被测回路两端，测量电压。"
+    },
+    {
+      "id": "ammeter",
+      "name": "电流表",
+      "short": "PA",
+      "category": "instrument",
+      "role": "passive",
+      "symbol": "meter_a",
+      "pins": [
+        { "id": "1", "x": 0, "y": -30, "dir": "up" },
+        { "id": "2", "x": 0, "y": 30, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelPos": "left",
+      "desc": "串联接入被测回路，测量电流。"
+    },
+    {
+      "id": "terminal",
+      "name": "接线端子",
+      "short": "X",
+      "category": "other",
+      "role": "passive",
+      "symbol": "terminal",
+      "pins": [
+        { "id": "1", "x": 0, "y": -20, "dir": "up" },
+        { "id": "2", "x": 0, "y": 20, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "labelPos": "left",
+      "desc": "用于导线转接与分线。"
+    },
+    {
+      "id": "pwr_terminal",
+      "name": "电源端子",
+      "short": "XT",
+      "category": "other",
+      "role": "terminal",
+      "symbol": "terminal_pwr",
+      "pins": [
+        { "id": "1", "x": 0, "y": 20, "dir": "down" }
+      ],
+      "labelPos": "top",
+      "desc": "电源引入端子，相线可在属性面板自定义（U/V/W/N/PE/L1/L2/L3/L 等），接线后自动为所在导线赋予相别。"
+    },
+    {
+      "id": "prox_no",
+      "name": "接近开关（常开）",
+      "short": "SP",
+      "category": "sensor",
+      "role": "switch",
+      "symbol": "prox",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "initial": "open",
+      "labelGap": 26, "labelPos": "left",
+      "desc": "感应到物体时闭合，常用于自动控制与检测回路。"
+    },
+    {
+      "id": "prox_nc",
+      "name": "接近开关（常闭）",
+      "short": "SP",
+      "category": "sensor",
+      "role": "switch",
+      "nc": true,
+      "symbol": "prox",
+      "pins": [
+        { "id": "1", "x": 0, "y": -28, "dir": "up" },
+        { "id": "2", "x": 0, "y": 28, "dir": "down" }
+      ],
+      "poles": [["1", "2"]],
+      "initial": "closed",
+      "labelGap": 26, "labelPos": "left",
+      "desc": "感应到物体时断开，常用于定位与保护回路。"
+    }
+  ]
+}

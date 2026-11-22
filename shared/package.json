@@ -1,0 +1,6 @@
+{
+  "name": "@scj/shared",
+  "private": true,
+  "type": "module",
+  "description": "仿真引擎与渲染核心（纯 JS，Node 与浏览器通用）"
+}
