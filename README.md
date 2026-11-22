@@ -5,6 +5,7 @@
 
 技术栈：**Node.js + Vue 3 + Electron**（目录组织对齐 [electron-egg](https://github.com/dromara/electron-egg) 的 controller / service / frontend 分层约定）。
 
+
 ---
 
 ## 快速开始
@@ -122,5 +123,6 @@ npm run build        # vite build + electron-builder（Windows NSIS 安装包）
 ```
 
 输出位于 `dist_electron/`。图标、签名等配置见 `package.json` 的 `build` 字段。
-#   x n y f z  
+#   x n y f z 
+ 
  
