@@ -168,7 +168,9 @@ function segToPath(s, hops) {
  * 网络标号标签：同名标号的导线在电气上是同一点，标签用小旗形式贴在导线起点。
  */
 function netFlag(net, geo, color) {
-  const p = net.tagPos || (geo.lines[0] ? { x: geo.lines[0].x1, y: geo.lines[0].y1 } : null);
+  // 网络标号小旗位置独立于线号（线号可拖动写 tagPos，小旗用 flagPos），
+  // 兼容旧数据：没有 flagPos 时回退 tagPos，再回退线段起点。
+  const p = net.flagPos || net.tagPos || (geo.lines[0] ? { x: geo.lines[0].x1, y: geo.lines[0].y1 } : null);
   if (!p) return '';
   const dir = net.tagSide === 'left' ? -1 : 1;
   const text = String(net.name);
@@ -324,9 +326,14 @@ function renderNote(note, { interactive, selected }) {
     selectedIds = null,
     selectedNet = null,
     selectedNote = null,
+    selectedSegs = null, // 框选命中的导线段 [{netId, segIndex}]，随元件一起拖动
     interactive = false,
     dimDead = false,
   } = options;
+  // 选中线段的快速查找集合（key = `${netId}:${polylineIndex}`）
+  const selSegSet = new Set(
+    (Array.isArray(selectedSegs) ? selectedSegs : []).map((s) => `${s.netId}:${s.segIndex}`)
+  );
   const W = circuit.canvas?.width || 2000;
   const H = circuit.canvas?.height || 1300;
   const types = toTypeMap(deviceTypes);
@@ -366,7 +373,18 @@ function renderNote(note, { interactive, selected }) {
       }
     }
     for (const { seg, hops } of segsByNet.get(net.id) || []) {
-      parts.push(
+      const pidx = Number.isInteger(seg.polylineIndex) ? seg.polylineIndex : null;
+      const key = `${net.id}:${pidx}`;
+      const isSegSel = selSegSet.has(key);
+      const segAttrs = `data-net="${net.id}"${pidx !== null ? ` data-seg="${pidx}"` : ''}`;
+      const segParts = [];
+      // 框选命中的导线段：铺一层紫色半透明底线，明确「这段线也被选中了」
+      if (isSegSel) {
+        segParts.push(
+          `<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}" stroke="${C.wireTag}" stroke-width="${width + 8}" stroke-linecap="round" opacity="0.28"/>`
+        );
+      }
+      segParts.push(
         segToPath(seg, hops)
           .replaceAll('WIRECOLOR', color)
           .replaceAll('WIDTH', width)
@@ -374,11 +392,12 @@ function renderNote(note, { interactive, selected }) {
       );
       if (interactive) {
         // data-seg = polyline 索引：Delete 时据此只删除选中的那一段，不误删整条网络。
-        const segIdx = Number.isInteger(seg.polylineIndex) ? ` data-seg="${seg.polylineIndex}"` : '';
-        parts.push(
-          `<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}" stroke="transparent" stroke-width="13" fill="none" data-net="${net.id}"${segIdx} style="pointer-events:stroke"/>`
+        segParts.push(
+          `<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}" stroke="transparent" stroke-width="13" fill="none" ${segAttrs} style="pointer-events:stroke"/>`
         );
       }
+      // 每段包一层 g，便于框选/拖动时对该段做整体平移预览（不影响命中判定）
+      parts.push(`<g class="wire-seg" data-wire-seg="${key}" ${segAttrs}>${segParts.join('')}</g>`);
     }
     // 母线接线点位：可吸附、可起线、可收线，解决三相线过细/过密难以命中的问题
     if (interactive && net.bus) parts.push(busTaps(net, segsByNet.get(net.id) || [], color));
@@ -396,27 +415,32 @@ function renderNote(note, { interactive, selected }) {
         }" font-family="${FONT}">${esc(net.label.text)}</text>`
       );
     }
-    // 导线编号（电气原理图标准：线号标注在导线旁）
+    // 导线编号（线号）：用户要求紫色、大字体、可拖动。
+    // 位置优先取独立字段 wireTagPos（拖拽写入），再兼容旧数据 tagPos，最后自动定位。
     if (net.tag) {
-      let p = net.tagPos;
+      let p = net.wireTagPos || net.tagPos;
       if (!p) {
         const l = geo.lines[0];
         if (l) {
           // 竖直导线标在右侧，水平导线标在上方
           p =
             Math.abs(l.y1 - l.y2) < 0.6
-              ? { x: (l.x1 + l.x2) / 2, y: l.y1 - 7, anchor: 'middle' }
-              : { x: Math.max(l.x1, l.x2) + 6, y: (l.y1 + l.y2) / 2 + 4, anchor: 'start' };
+              ? { x: (l.x1 + l.x2) / 2, y: l.y1 - 9, anchor: 'middle' }
+              : { x: Math.max(l.x1, l.x2) + 6, y: (l.y1 + l.y2) / 2 + 5, anchor: 'start' };
         }
       }
       if (p) {
-        // 白色描边 + 深青文字：无论底色是网格还是导线都清晰可读
+        const anchor = p.anchor || 'start';
+        const tagText = String(net.tag);
+        // 估算文字宽度，做一块透明命中区，方便鼠标抓住线号拖动
+        const tw = Math.max(18, tagText.length * 11);
+        const hx = anchor === 'middle' ? p.x - tw / 2 : anchor === 'end' ? p.x - tw : p.x;
+        // 白色描边 + 紫色文字：网格/导线底色下都清晰可读
         labelParts.push(
-          `<text x="${p.x}" y="${p.y}" font-size="12.5" font-weight="700" fill="${C.wireTag}" text-anchor="${
-            p.anchor || 'start'
-          }" font-family="${FONT}" paint-order="stroke" stroke="${C.canvas}" stroke-width="3.5" stroke-linejoin="round" data-net="${
-            net.id
-          }" style="cursor:${interactive ? 'pointer' : 'default'}">${esc(net.tag)}</text>`
+          `<g class="wire-tag" data-tag-drag="${net.id}" data-net="${net.id}" style="cursor:${interactive ? 'move' : 'default'}">` +
+            `<rect x="${hx - 4}" y="${p.y - 18}" width="${tw + 8}" height="25" fill="transparent"/>` +
+            `<text x="${p.x}" y="${p.y}" font-size="17" font-weight="800" fill="${C.wireTag}" text-anchor="${anchor}" font-family="${FONT}" paint-order="stroke" stroke="${C.canvas}" stroke-width="4" stroke-linejoin="round" data-net="${net.id}">${esc(tagText)}</text>` +
+          `</g>`
         );
       }
     }

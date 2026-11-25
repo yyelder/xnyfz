@@ -36,8 +36,10 @@ export const C = {
   labelSB: '#d98218',  // 按钮
   labelFR: '#c0392b',  // 热继电器
   labelMotor: '#1f9d55', // 电机
-  /* 线号（导线编号）：与网络标号小旗区分，用深青底白字 */
-  wireTag: '#0b6e99',
+  /* 线号（导线编号）：用户指定紫色大字，与网络标号小旗、元件编号区分 */
+  wireTag: '#7b2fbf',
+  /* 线号选中/拖拽时的强调色 */
+  wireTagActive: '#9b4fd0',
   /* 说明文本卡片 */
   noteBg: '#fffdf3',
   noteBorder: '#d9c48a',

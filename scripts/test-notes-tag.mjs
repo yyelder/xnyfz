@@ -1,7 +1,7 @@
 /**
  * 线号 / 说明文本（含配图）/ 标号默认位置 专项单测
  * ------------------------------------------------------------------
- * 1. 线号 net.tag 必须渲染在导线旁，且颜色/字号可辨（深青、12.5、白色描边）
+ * 1. 线号 net.tag 必须渲染在导线旁，且颜色/字号可辨（紫色、17 号加粗、白色描边、可拖拽）
  * 2. 说明文本：文字按宽度折行、卡片带 data-note（可选中/拖动）、空文本显示占位
  * 3. 说明配图：dataURL 渲染为 <image>，支持 左/右/上 三种位置与自定义宽度
  * 4. 标号默认位置：未显式设置 labelPos 的元件，标号默认在元件左侧（text-anchor=end）
@@ -44,10 +44,11 @@ console.log('\n[1] 线号渲染');
 {
   const svg = renderCircuit({ circuit: base, deviceTypes, snapshot: null, options: { interactive: true } });
   check('线号文字已渲染', svg.includes('>101</text>'));
-  check('线号使用深青强调色 #0b6e99', svg.includes('#0b6e99'));
-  check('线号字号 12.5（比旧版 11 更易读）', svg.includes('font-size="12.5"'));
+  check('线号使用紫色强调色 #7b2fbf', svg.includes('#7b2fbf'));
+  check('线号字号 17 且加粗（用户要求字体大一些）', svg.includes('font-size="17"') && svg.includes('font-weight="800"'));
   check('线号带白色描边（叠在导线/网格上也清晰）', svg.includes('paint-order="stroke"'));
   check('线号可点击选中网络（带 data-net）', /data-net="net1"/.test(svg));
+  check('线号可拖动（带 data-tag-drag 命中标识）', svg.includes('data-tag-drag="net1"'));
 }
 
 console.log('\n[2] 说明文本卡片');

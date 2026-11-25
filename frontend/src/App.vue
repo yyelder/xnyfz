@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, onUnmounted } from 'vue';
+import { onMounted, ref, computed, reactive, onUnmounted, watch } from 'vue';
 import { loadBundle, saveCircuit, deleteCircuit, isDesktop } from './api.js';
 import { useSimulator } from './composables/useSimulator.js';
 import CanvasView from './components/CanvasView.vue';
@@ -21,8 +21,94 @@ const selected = ref(null);
 const selectedNet = ref(null);
 const rightTab = ref('info');
 const saveName = ref('');
+/* 课程目录操作：大类名称 + 顶部删除二次确认状态 */
+const CATEGORY_NAMES = { lighting: '常用照明电路', drive: '电力拖动控制' };
+const pendingCatalogDelete = ref(null);
 const canvasRef = ref(null);
 const deviceCount = computed(() => sim.circuit.value?.devices.length || 0);
+
+/* ------------------------------------------------------------ 课程目录覆盖层 */
+/**
+ * 内置课程来自只读资源包，不能直接改写文件；「我的电路加入课程 / 删除 / 排序」
+ * 统一记录在本地覆盖表里（跨网页版与桌面端一致，均为渲染进程 localStorage）：
+ *   hidden   —— 从课程目录删除（隐藏）的课程 id（内置课程用隐藏，用户课程真删）
+ *   order    —— 课程列表的显示顺序（只在大类内比较，未列出的按原 order 兜底）
+ *   promoted —— 从「我的电路」加入课程列表的用户课程 id
+ */
+const CATALOG_KEY = 'scj.course-catalog.v1';
+const catalog = reactive({ hidden: [], order: [], promoted: [] });
+(function loadCatalog() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CATALOG_KEY) || '{}');
+    catalog.hidden = Array.isArray(raw.hidden) ? raw.hidden : [];
+    catalog.order = Array.isArray(raw.order) ? raw.order : [];
+    catalog.promoted = Array.isArray(raw.promoted) ? raw.promoted : [];
+  } catch (_) {
+    /* 数据损坏时回到默认目录 */
+  }
+})();
+function saveCatalog() {
+  try {
+    localStorage.setItem(
+      CATALOG_KEY,
+      JSON.stringify({ hidden: catalog.hidden, order: catalog.order, promoted: catalog.promoted })
+    );
+  } catch (_) {
+    /* 隐私模式等场景忽略 */
+  }
+}
+/** 课程排序：先按覆盖表 order，再按课程自带 order（两处保持一致，Sidebar 同逻辑） */
+function courseCompare(a, b) {
+  const ia = catalog.order.indexOf(a.id);
+  const ib = catalog.order.indexOf(b.id);
+  const va = ia >= 0 ? ia : Number.MAX_SAFE_INTEGER;
+  const vb = ib >= 0 ? ib : Number.MAX_SAFE_INTEGER;
+  if (va !== vb) return va - vb;
+  return (a.order || 99) - (b.order || 99);
+}
+/** 课程目录中当前可见的课程（内置 + 已加入的用户课程，已排除删除项） */
+function visibleCourses() {
+  return bundle.value.circuits
+    .filter((c) => c.kind !== 'work' && !catalog.hidden.includes(c.id) && (c.builtin || catalog.promoted.includes(c.id)))
+    .sort(courseCompare);
+}
+
+/**
+ * 把某个大类的「完整可见顺序」写回覆盖表 order。
+ * 只记录被移动的一项是不够的：order 里没有的课程会退化成 MAX 而被排到最后，
+ * 导致新加入的课程反而跑到最前面。这里始终保存整段快照，排序才稳定。
+ */
+function syncOrder(key) {
+  const old = [...catalog.order];
+  const idxOf = (id) => {
+    const i = old.indexOf(id);
+    return i >= 0 ? i : Number.MAX_SAFE_INTEGER;
+  };
+  const ids = bundle.value.circuits
+    .filter((c) => c.kind !== 'work' && publishedCategoryOf(c) === key)
+    .filter((c) => !catalog.hidden.includes(c.id) && (c.builtin || catalog.promoted.includes(c.id)))
+    .sort((a, b) => {
+      const ia = idxOf(a.id);
+      const ib = idxOf(b.id);
+      if (ia !== ib) return ia - ib;
+      return (a.order || 99) - (b.order || 99);
+    })
+    .map((c) => c.id);
+  const rest = catalog.order.filter((x) => !ids.includes(x));
+  catalog.order = [...ids, ...rest];
+}
+
+/**
+ * 目录改动（加入 / 删除 / 上移下移）后重新连续标号：
+ * 按当前显示顺序把该大类每门课程的 order 改写为 1..N，并同步覆盖表快照，
+ * 侧栏序号、顶部「第 N 节」与刷新后的顺序都不会出现跳号。
+ */
+function renumberCategory(key) {
+  const list = visibleCourses().filter((c) => publishedCategoryOf(c) === key);
+  list.forEach((c, i) => { c.order = i + 1; });
+  const ids = list.map((c) => c.id);
+  catalog.order = [...ids, ...catalog.order.filter((x) => !ids.includes(x))];
+}
 
 /* ------------------------------------------------------------ 视图与工作台 */
 const view = ref('courses'); // courses | workbench
@@ -94,24 +180,69 @@ async function onWorkPublish(workDoc) {
   revealId.value = saved.id;
 }
 
-/** 删除「我的电路」中的课程（仅用户课程可删，内置课程不受影响） */
+/**
+ * 删除课程目录中的一项：
+ *  - 内置课程 → 记入覆盖表 hidden（不改只读资源包，可清缓存恢复）
+ *  - 用户课程（我的电路 / 已加入课程）→ 从资源库真正删除
+ */
 async function onCourseDelete(id) {
   const c = bundle.value.circuits.find((x) => x.id === id);
-  if (!c || c.builtin) return;
-  await deleteCircuit(id);
-  bundle.value.circuits = bundle.value.circuits.filter((x) => x.id !== id);
+  if (!c) return;
+  if (c.builtin) {
+    if (!catalog.hidden.includes(id)) catalog.hidden.push(id);
+  } else {
+    await deleteCircuit(id);
+    bundle.value.circuits = bundle.value.circuits.filter((x) => x.id !== id);
+    catalog.promoted = catalog.promoted.filter((x) => x !== id);
+  }
+  catalog.order = catalog.order.filter((x) => x !== id);
+  renumberCategory(publishedCategoryOf(c));
+  saveCatalog();
   if (revealId.value === id) revealId.value = null;
-  // 正在演示该课程时，切到第一门内置课程，避免画布停留在已删除的电路上
+  // 正在演示被删课程时，切到目录中第一门可见课程，避免画布停留在已删除电路
   if (currentId.value === id) {
-    const first = bundle.value.circuits
-      .filter((x) => x.kind !== 'work' && x.builtin)
-      .sort((a, b) => (a.order || 99) - (b.order || 99))[0];
+    const first = visibleCourses()[0];
     if (first) openCourse(first.id);
     else {
       currentId.value = null;
       rightTab.value = 'info';
     }
   }
+}
+
+/** 「我的电路」→ 加入课程列表：写入 promoted，并排到该大类课程列表末尾 */
+function onCoursePromote(id) {
+  const c = bundle.value.circuits.find((x) => x.id === id);
+  if (!c || c.builtin) return;
+  if (!catalog.promoted.includes(id)) catalog.promoted.push(id);
+  // 同步该大类的完整顺序，并按新顺序重新连续标号
+  renumberCategory(publishedCategoryOf(c));
+  saveCatalog();
+  // 展开目标大类，让刚加入的课程立刻可见
+  revealId.value = null;
+  Promise.resolve().then(() => {
+    revealId.value = id;
+  });
+}
+
+/** 课程列表上移 / 下移（delta = -1 / +1），写入覆盖表 order */
+function onCourseMove(id, delta) {
+  const c = bundle.value.circuits.find((x) => x.id === id);
+  if (!c) return;
+  const key = publishedCategoryOf(c);
+  syncOrder(key); // 先补齐该大类快照，保证交换的是完整列表
+  const list = visibleCourses()
+    .filter((x) => publishedCategoryOf(x) === key)
+    .map((x) => x.id);
+  const i = list.indexOf(id);
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  // 只重写该大类的顺序，其余 id 保持原有相对位置
+  const others = catalog.order.filter((x) => !list.includes(x));
+  catalog.order = [...list, ...others];
+  renumberCategory(key);
+  saveCatalog();
 }
 
 /** 课程端编辑「原理说明/操作步骤/考核要点」（仅用户自建/发布的课程可编辑） */
@@ -127,7 +258,7 @@ function onCourseInfoSave(data) {
 onMounted(async () => {
   bundle.value = await loadBundle();
   const first = bundle.value.circuits
-    .filter((c) => c.builtin)
+    .filter((c) => c.builtin && !catalog.hidden.includes(c.id))
     .sort((a, b) => (a.order || 99) - (b.order || 99))[0];
   if (first) openCourse(first.id);
   const q = new URLSearchParams(window.location.search);
@@ -446,6 +577,35 @@ const currentCourseEditable = computed(() => {
   const c = bundle.value.circuits.find((x) => x.id === currentId.value);
   return !!(c && c.builtin === false && !buildMode.value);
 });
+
+/* ------------------------------------------------------------ 页面上端：目录操作 */
+/** 当前打开课程在其大类中的位置，驱动顶部「第 N 节 / 上移 / 下移 / 删除」 */
+const currentCatalog = computed(() => {
+  if (buildMode.value || !currentId.value) return null;
+  const c = bundle.value.circuits.find((x) => x.id === currentId.value);
+  if (!c || c.kind === 'work') return null;
+  const key = publishedCategoryOf(c);
+  const list = visibleCourses().filter((x) => publishedCategoryOf(x) === key);
+  const i = list.findIndex((x) => x.id === currentId.value);
+  return {
+    key,
+    catName: CATEGORY_NAMES[key] || '课程电路',
+    index: i,
+    total: list.length,
+    inCatalog: i >= 0,
+    canUp: i > 0,
+    canDown: i >= 0 && i < list.length - 1,
+  };
+});
+function askDeleteCurrent() { pendingCatalogDelete.value = currentId.value; }
+function cancelDeleteCurrent() { pendingCatalogDelete.value = null; }
+function confirmDeleteCurrent() {
+  const id = pendingCatalogDelete.value;
+  pendingCatalogDelete.value = null;
+  if (id) onCourseDelete(id);
+}
+/* 切换课程时取消未完成的删除确认，避免误删另一门课 */
+watch(currentId, () => { pendingCatalogDelete.value = null; });
 </script>
 
 <template>
@@ -480,9 +640,12 @@ const currentCourseEditable = computed(() => {
         :current-id="currentId"
         :build-mode="buildMode"
         :reveal-id="revealId"
+        :catalog="catalog"
         @open="openCourse"
         @open-build="openBuild"
         @delete="onCourseDelete"
+        @move="onCourseMove"
+        @promote="onCoursePromote"
       />
 
       <div class="main-area">
@@ -511,6 +674,48 @@ const currentCourseEditable = computed(() => {
           </template>
         </div>
 
+        <!-- 页面上端：当前课程的目录操作（位置标号 / 上移 / 下移 / 删除集中在这里） -->
+        <div v-if="!buildMode && currentCatalog" class="catalog-bar" data-catalog-bar>
+          <div class="catalog-path">
+            <span class="catalog-crumb">{{ currentCatalog.catName }}</span>
+            <span class="catalog-sep">›</span>
+            <template v-if="currentCatalog.inCatalog">
+              <span class="catalog-index">第 <b>{{ currentCatalog.index + 1 }}</b> 节</span>
+              <span class="catalog-total">共 {{ currentCatalog.total }} 节</span>
+            </template>
+            <span v-else class="catalog-index mine">我的电路 · 尚未加入课程目录</span>
+          </div>
+          <div class="spacer" />
+          <div class="catalog-ops">
+            <button
+              v-if="!currentCatalog.inCatalog"
+              class="btn small"
+              data-op="promote"
+              @click="onCoursePromote(currentId)"
+            >＋ 加入课程电路</button>
+            <button
+              class="btn small"
+              data-op="up"
+              :disabled="!currentCatalog.canUp"
+              title="在课程目录中上移一位"
+              @click="onCourseMove(currentId, -1)"
+            >↑ 上移</button>
+            <button
+              class="btn small"
+              data-op="down"
+              :disabled="!currentCatalog.canDown"
+              title="在课程目录中下移一位"
+              @click="onCourseMove(currentId, 1)"
+            >↓ 下移</button>
+            <template v-if="pendingCatalogDelete === currentId">
+              <span class="delete-warn">确认从课程目录删除？</span>
+              <button class="btn small danger" data-op="del-confirm" @click="confirmDeleteCurrent">确认删除</button>
+              <button class="btn small" data-op="del-cancel" @click="cancelDeleteCurrent">取消</button>
+            </template>
+            <button v-else class="btn small danger" data-op="delete" @click="askDeleteCurrent">🗑 删除</button>
+          </div>
+        </div>
+
         <CanvasView
           ref="canvasRef"
           :circuit="sim.circuit.value"
@@ -535,7 +740,7 @@ const currentCourseEditable = computed(() => {
         />
       </div>
 
-      <div class="right-panel">
+      <div class="right-panel" :class="{ 'with-catalog': !buildMode && currentCatalog }">
         <template v-if="buildMode">
           <BuildPanel
             :device-types="bundle.deviceTypes"

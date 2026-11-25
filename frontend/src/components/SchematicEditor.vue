@@ -25,6 +25,7 @@ const running = ref(false);
 const tool = ref('select');
 const selected = ref(null);
 const selectedIds = ref([]); // 框选的多个元件（长度>1 时可整体拖动/旋转/删除）
+const selectedSegs = ref([]); // 框选命中的导线段 [{ netId, segIndex }]，与元件一起整体拖动
 const selectedNet = ref(null);
 const selectedSeg = ref(null); // 选中的导线段（polyline 索引）
 const selectedNote = ref(null); // 选中的说明文本卡片
@@ -104,6 +105,7 @@ function restore(s) {
   syncCourseDrafts();
   selected.value = null;
   selectedIds.value = [];
+  selectedSegs.value = [];
   selectedNet.value = null;
   selectedNote.value = null;
   sim.open(draft.value, props.deviceTypes);
@@ -192,6 +194,7 @@ function loadWork() {
   tool.value = 'select';
   selected.value = null;
   selectedIds.value = [];
+  selectedSegs.value = [];
   selectedNet.value = null;
   selectedNote.value = null;
   armedType.value = null;
@@ -211,6 +214,7 @@ watch(running, (r) => {
   armedNote.value = false;
   selected.value = null;
   selectedIds.value = [];
+  selectedSegs.value = [];
   selectedNet.value = null;
   selectedNote.value = null;
   nextTick(() => canvasRef.value?.fit());
@@ -349,30 +353,75 @@ function onDeviceMove(id, x, y) {
   });
 }
 
-/** 框选提交：一个都没框到 → 清空选择；框到多个 → selectedIds 生效，整体拖动/旋转/删除 */
-function onMarqueeSelect(ids) {
+/**
+ * 框选提交：payload 为 { ids, segs }（兼容旧数组格式）。
+ * 框到元件 → selectedIds 生效；框到导线 → selectedSegs 生效，可与元件一起整体拖动。
+ */
+function onMarqueeSelect(payload) {
+  const ids = Array.isArray(payload) ? payload : payload?.ids || [];
+  const segs = Array.isArray(payload) ? [] : payload?.segs || [];
   selectedIds.value = Array.isArray(ids) ? ids : [];
+  selectedSegs.value = Array.isArray(segs)
+    ? segs.filter((s) => s && s.netId && Number.isInteger(s.segIndex))
+    : [];
   if (selectedIds.value.length === 1) {
     selected.value = selectedIds.value[0];
   } else {
     selected.value = null;
   }
-  selectedNet.value = null;
   selectedNote.value = null;
-  selectedSeg.value = null;
+  // 只框到导线（没有元件）：顺带选中第一条导线，右侧可编辑线号 / 删除该段
+  if (!selectedIds.value.length && selectedSegs.value.length) {
+    selectedNet.value = selectedSegs.value[0].netId;
+    selectedSeg.value = selectedSegs.value[0].segIndex;
+  } else {
+    selectedNet.value = null;
+    selectedSeg.value = null;
+  }
 }
 
-/** 多元件整体移动：一次 commit 一个历史节点，支持 Ctrl+Z 一次撤销 */
-function onDevicesMove(moves) {
-  if (!draft.value || !Array.isArray(moves) || !moves.length) return;
+/**
+ * 群组移动提交：payload 为 { moves, segs, dx, dy }（兼容旧数组格式）。
+ * 元件与导线在同一次 commit 内完成，整组移动只产生一个历史节点。
+ */
+function onDevicesMove(payload) {
+  if (!draft.value) return;
+  const moves = Array.isArray(payload) ? payload : payload?.moves || [];
+  const segs = Array.isArray(payload) ? [] : payload?.segs || [];
+  const dx = Number(payload?.dx) || 0;
+  const dy = Number(payload?.dy) || 0;
+  const hasMoves = Array.isArray(moves) && moves.length > 0;
+  const hasSegs = Array.isArray(segs) && segs.length > 0 && (dx !== 0 || dy !== 0);
+  if (!hasMoves && !hasSegs) return;
   commit(() => {
-    for (const m of moves) {
-      const dev = draft.value.devices.find((d) => d.id === m.id);
-      if (dev && Number.isFinite(m.x) && Number.isFinite(m.y)) {
-        dev.x = m.x;
-        dev.y = m.y;
+    if (hasMoves) {
+      for (const m of moves) {
+        const dev = draft.value.devices.find((d) => d.id === m.id);
+        if (dev && Number.isFinite(m.x) && Number.isFinite(m.y)) {
+          dev.x = m.x;
+          dev.y = m.y;
+        }
       }
     }
+    if (hasSegs) {
+      for (const s of segs) {
+        const net = draft.value.nets.find((n) => n.id === s.netId);
+        const poly = net?.geometry?.[s.segIndex];
+        if (Array.isArray(poly)) {
+          // net.geometry[segIndex] 是一条折线 [[x,y], ...]：整条平移，保持折角与长度
+          net.geometry[s.segIndex] = poly.map((pt) => [Math.round(pt[0] + dx), Math.round(pt[1] + dy)]);
+        }
+      }
+    }
+  });
+}
+
+/** 线号拖动提交：写入独立字段 wireTagPos，避免与网络标号小旗（flagPos）互相干扰 */
+function onTagMove(netId, x, y, anchor) {
+  const net = draft.value?.nets.find((n) => n.id === netId);
+  if (!net || !Number.isFinite(x) || !Number.isFinite(y)) return;
+  commit(() => {
+    net.wireTagPos = { x, y, anchor: anchor || 'start' };
   });
 }
 
@@ -405,6 +454,7 @@ function deleteSelected() {
       .filter((n) => (n.pins || []).length > 0);
     selected.value = null;
     selectedIds.value = [];
+    selectedSegs.value = [];
   });
 }
 
@@ -417,6 +467,7 @@ function clearDevices() {
     draft.value.nets = draft.value.nets.filter((n) => n.phase);
     selected.value = null;
     selectedIds.value = [];
+    selectedSegs.value = [];
     selectedNet.value = null;
   });
 }
@@ -1203,6 +1254,7 @@ function onKey(e) {
           :tool="tool"
           :selected="selected"
           :selected-ids="selectedIds"
+          :selected-segs="selectedSegs"
           :selected-net="selectedNet"
           :selected-seg="selectedSeg"
           :selected-note="selectedNote"
@@ -1214,11 +1266,12 @@ function onKey(e) {
           :locked="locked"
           @activate="sim.toggleDevice"
           @press="sim.press"
-          @select="(id) => { selected = id; selectedIds = id ? [id] : []; selectedNet = null; selectedSeg = null; selectedNote = null; }"
-          @select-net="(id, seg) => { selectedNet = id; selectedSeg = seg; selected = null; selectedIds = []; selectedNote = null; }"
-          @select-note="(id) => { selectedNote = id; selected = null; selectedIds = []; selectedNet = null; selectedSeg = null; }"
+          @select="(id) => { selected = id; selectedIds = id ? [id] : []; selectedSegs = []; selectedNet = null; selectedSeg = null; selectedNote = null; }"
+          @select-net="(id, seg) => { selectedNet = id; selectedSeg = seg; selected = null; selectedIds = []; selectedSegs = []; selectedNote = null; }"
+          @select-note="(id) => { selectedNote = id; selected = null; selectedIds = []; selectedSegs = []; selectedNet = null; selectedSeg = null; }"
           @marquee-select="onMarqueeSelect"
           @devices-move="onDevicesMove"
+          @tag-move="onTagMove"
           @note-move="onNoteMove"
           @note-delete="deleteNote"
           @place-note="onPlaceNote"
@@ -1336,13 +1389,15 @@ function onKey(e) {
           </div>
 
           <div v-else-if="selectedIds.length > 1 && !running" class="net-editor">
-            <div class="net-editor-title">多选（{{ selectedIds.length }} 个元件）</div>
+            <div class="net-editor-title">
+              多选（{{ selectedIds.length }} 个元件<span v-if="selectedSegs.length"> + {{ selectedSegs.length }} 段导线</span>）
+            </div>
             <div class="multi-chip-list">
               <span v-for="lb in selectedDevLabels" :key="lb" class="multi-chip">{{ lb }}</span>
             </div>
             <div class="field-hint">
-              在画布空白处按住左键拖动即可框选；拖动任意一个被选中元件 = 整体移动（吸附网格，一次撤销）；
-              Delete 删除全部；Esc 取消选择。
+              空白处按住左键拖动可框选元件与导线；拖动任一选中对象 = 整体移动（吸附网格，一次撤销）；
+              Delete 删除全部元件；Esc 取消选择。
             </div>
             <div class="net-editor-actions">
               <button class="btn small" @click="rotateSelected">整体旋转</button>

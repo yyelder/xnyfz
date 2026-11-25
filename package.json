@@ -18,8 +18,9 @@
     "test:wiring": "node scripts/test-wiring-ux.mjs",
     "test:newfeatures": "node scripts/test-new-features.mjs",
     "test:notestag": "node scripts/test-notes-tag.mjs",
-    "test:e2e": "node scripts/e2e-editor.mjs && node scripts/e2e-features.mjs && node scripts/e2e-linkage.mjs && node scripts/e2e-props.mjs && node scripts/e2e-wiring-ux.mjs && node scripts/e2e-new-features.mjs && node scripts/e2e-notes-tag.mjs && node scripts/e2e-marquee-course.mjs && node scripts/e2e-sidebar-fold.mjs",
-    "seed:dump": "node scripts/dump-db.mjs"
+    "test:e2e": "node scripts/e2e-editor.mjs && node scripts/e2e-features.mjs && node scripts/e2e-linkage.mjs && node scripts/e2e-props.mjs && node scripts/e2e-wiring-ux.mjs && node scripts/e2e-new-features.mjs && node scripts/e2e-notes-tag.mjs && node scripts/e2e-marquee-course.mjs && node scripts/e2e-seg-tag-drag.mjs && node scripts/e2e-sidebar-fold.mjs && node scripts/e2e-course-catalog.mjs",
+    "seed:dump": "node scripts/dump-db.mjs",
+    "test:devices": "node scripts/test-device-pack.mjs"
   },
   "dependencies": {
     "vue": "^3.5.13"

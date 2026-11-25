@@ -1,7 +1,7 @@
 /**
  * 本轮三项新功能端到端验证
  * ------------------------------------------------------------------
- * 1. 元件库「控制元件」分类包含中间继电器（线圈 KA / 常开 / 常闭）
+ * 1. 元件库「中间继电器」分类包含中间继电器（线圈 KA / 常开 / 常闭）
  * 2. 从元件库放置中间继电器线圈 → 编号 KA1；再放常开触点 → 跟随 KA1（自动联动）
  * 3. 新建作品画布尺寸为 2400×1500（画布更大）且骨架元件靠左侧
  * 4. 元件默认标号在左侧（labelPos=left）
@@ -66,8 +66,8 @@ try {
   const maxDevX = Math.max(...(st?.devices || []).map((d) => d.x));
   check('骨架元件默认靠画布左侧', maxDevX < 900, `最右元件 x=${maxDevX}`);
 
-  /* 1. 元件库控制元件分类含中间继电器 */
-  await page.click('.devlib-cat:has-text("控制元件")');
+  /* 1. 元件库「中间继电器」分类含中间继电器 */
+  await page.click('.devlib-cat:has-text("中间继电器")');
   await page.waitForTimeout(100);
   const hasKA = await page.locator('.devlib-item:has-text("中间继电器")').count();
   check('元件库含中间继电器元件（≥2）', hasKA >= 2, `count=${hasKA}`);

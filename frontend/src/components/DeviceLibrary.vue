@@ -12,19 +12,26 @@ const props = defineProps({
 });
 const emit = defineEmits(['arm']);
 
-/* 分类对齐竞品：开关按钮 / 用电元件 / 保护元件 / 控制元件 / 传感元件 / 电源仪表 / 其他 */
+/**
+ * 分类按用户清单的 14 类组织，与 device-types.json 的 group 字段一一对应；
+ * 末尾「其他」收纳断路器、仪表、接近开关等未列入清单的元件。
+ */
 const CATEGORIES = [
-  { id: 'switch', name: '开关按钮', test: (t) => t.category === 'switch' || t.role === 'button' },
-  { id: 'load', name: '用电元件', test: (t) => t.category === 'load' },
-  { id: 'protection', name: '保护元件', test: (t) => t.category === 'protection' || t.id.startsWith('fr_') },
-  {
-    id: 'control',
-    name: '控制元件',
-    test: (t) => ['km_coil', 'kt_coil', 'km_no', 'km_nc', 'km_no_3p', 'kt_no', 'kt_nc', 'ka_coil', 'ka_no', 'ka_nc'].includes(t.id),
-  },
-  { id: 'sensor', name: '传感元件', test: (t) => t.category === 'sensor' },
-  { id: 'instrument', name: '电源仪表', test: (t) => t.category === 'instrument' },
-  { id: 'other', name: '其他', test: (t) => t.category === 'other' || t.category === 'power' },
+  { id: 'switch', name: '常用开关' },
+  { id: 'limit', name: '行程开关' },
+  { id: 'button', name: '按钮' },
+  { id: 'contactor', name: '接触器' },
+  { id: 'thermal', name: '热继电器' },
+  { id: 'timer', name: '时间继电器' },
+  { id: 'relay', name: '中间继电器' },
+  { id: 'fuse', name: '熔断器' },
+  { id: 'motor', name: '常用电动机' },
+  { id: 'transformer', name: '变压器' },
+  { id: 'signal', name: '信号灯' },
+  { id: 'lighting', name: '照明灯' },
+  { id: 'socket', name: '插头和插座' },
+  { id: 'terminal', name: '接线端子' },
+  { id: 'other', name: '其他' },
 ];
 
 const activeCat = ref('switch');
@@ -35,7 +42,7 @@ const grouped = computed(() => {
   const hit = (t) => !q || t.name.includes(q) || t.id.toLowerCase().includes(q.toLowerCase());
   return CATEGORIES.map((c) => ({
     ...c,
-    types: props.deviceTypes.filter((t) => c.test(t) && hit(t)),
+    types: props.deviceTypes.filter((t) => (t.group || 'other') === c.id && hit(t)),
   })).filter((c) => c.types.length > 0);
 });
 

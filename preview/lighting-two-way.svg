@@ -13,17 +13,11 @@
   </defs>
   <rect x="0" y="0" width="1280" height="830" fill="#f9fbff"/>
   <rect x="0" y="0" width="1280" height="830" fill="url(#gridMajor)"/>
-  <g class="wires"><g class="wire" data-net="L" style="cursor:default"><line x1="140" y1="90" x2="1060" y2="90" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="360" y1="148" x2="360" y2="90" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/><circle class="junction" cx="360" cy="90" r="3.4499999999999997" fill="#d63a3a" stroke="#f9fbff" stroke-width="1" opacity="1"/></g><g class="wire" data-net="n-qf" style="cursor:default"><line x1="360" y1="212" x2="360" y2="310" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-t1" style="cursor:default"><line x1="332" y1="370" x2="332" y2="550" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-t2" style="cursor:default"><line x1="388" y1="370" x2="388" y2="550" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="n-el" style="cursor:default"><line x1="360" y1="490" x2="360" y2="624" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g><g class="wire" data-net="N" style="cursor:default"><line x1="140" y1="750" x2="1060" y2="750" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><line x1="360" y1="696" x2="360" y2="750" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/><circle class="junction" cx="360" cy="750" r="3.4499999999999997" fill="#2f6fb5" stroke="#f9fbff" stroke-width="1" opacity="1"/></g></g>
+  <g class="wires"><g class="wire" data-net="L" style="cursor:default"><g class="wire-seg" data-wire-seg="L:0" data-net="L" data-seg="0"><line x1="140" y1="90" x2="1060" y2="90" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/></g><g class="wire-seg" data-wire-seg="L:null" data-net="L"><line x1="360" y1="148" x2="360" y2="90" stroke="#d63a3a" stroke-width="3" stroke-linecap="round" opacity="1"/></g><circle class="junction" cx="360" cy="90" r="3.4499999999999997" fill="#d63a3a" stroke="#f9fbff" stroke-width="1" opacity="1"/></g><g class="wire" data-net="n-qf" style="cursor:default"><g class="wire-seg" data-wire-seg="n-qf:null" data-net="n-qf"><line x1="360" y1="212" x2="360" y2="310" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g></g><g class="wire" data-net="n-t1" style="cursor:default"><g class="wire-seg" data-wire-seg="n-t1:null" data-net="n-t1"><line x1="332" y1="370" x2="332" y2="550" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g></g><g class="wire" data-net="n-t2" style="cursor:default"><g class="wire-seg" data-wire-seg="n-t2:null" data-net="n-t2"><line x1="388" y1="370" x2="388" y2="550" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g></g><g class="wire" data-net="n-el" style="cursor:default"><g class="wire-seg" data-wire-seg="n-el:null" data-net="n-el"><line x1="360" y1="490" x2="360" y2="624" stroke="#33475e" stroke-width="2.3" stroke-linecap="round" opacity="1"/></g></g><g class="wire" data-net="N" style="cursor:default"><g class="wire-seg" data-wire-seg="N:0" data-net="N" data-seg="0"><line x1="140" y1="750" x2="1060" y2="750" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/></g><g class="wire-seg" data-wire-seg="N:null" data-net="N"><line x1="360" y1="696" x2="360" y2="750" stroke="#2f6fb5" stroke-width="3" stroke-linecap="round" opacity="1"/></g><circle class="junction" cx="360" cy="750" r="3.4499999999999997" fill="#2f6fb5" stroke="#f9fbff" stroke-width="1" opacity="1"/></g></g>
   <g class="wire-labels"><text x="140" y="80" font-size="12" font-weight="600" fill="#d63a3a" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">L（相线）220V</text><text x="140" y="772" font-size="12" font-weight="600" fill="#2f6fb5" text-anchor="start" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif">N（零线）</text></g>
   <g class="devices">
       <g class="dev" data-dev="QF1" style="cursor:pointer">
-        <g transform="translate(360 180) rotate(0)">
-      <line x1="0" y1="-32" x2="0" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <line x1="0" y1="13" x2="0" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <circle cx="0" cy="-13" r="2.3" fill="#182635"/>
-      <g transform="rotate(-28 0 13)"><line x1="0" y1="13" x2="0" y2="-12" stroke="#182635" stroke-width="2.6" stroke-linecap="round" /></g>
-      <rect x="5" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/>
-    </g>
+        <g transform="translate(360 180) rotate(0)"><line x1="0" y1="-32" x2="0" y2="-13" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><line x1="0" y1="13" x2="0" y2="32" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><circle cx="0" cy="-13" r="2.3" fill="#182635"/><g transform="rotate(-28 0 13)"><line x1="0" y1="13" x2="0" y2="-12" stroke="#182635" stroke-width="2.6" stroke-linecap="round" /></g><rect x="5" y="-19" width="7" height="7" rx="0" fill="none" stroke="#182635" stroke-width="1.2"/></g>
         
         <text x="346" y="184" font-size="16" font-weight="700" fill="#182635" text-anchor="end" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" data-dev-label="QF1" data-label-drag="QF1" style="cursor:move">QF1</text>
         <circle cx="360" cy="148" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF1:1"/><circle cx="360" cy="212" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="QF1:2"/>
@@ -31,15 +25,7 @@
         
       </g>
       <g class="dev" data-dev="SA1" style="cursor:pointer">
-        <g transform="translate(360 340) rotate(0)">
-      <line x1="0" y1="-30" x2="0" y2="-14" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <line x1="-28" y1="14" x2="-28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <line x1="28" y1="14" x2="28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <circle cx="0" cy="-14" r="2.4" fill="#182635"/>
-      <circle cx="-28" cy="14" r="2.2" fill="#182635"/>
-      <circle cx="28" cy="14" r="2.2" fill="#182635"/>
-      <path d="M 0 -14 L -26 14" fill="none" stroke="#182635" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>
+        <g transform="translate(360 340) rotate(0)"><line x1="0" y1="-30" x2="0" y2="-14" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><line x1="-28" y1="14" x2="-28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><line x1="28" y1="14" x2="28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><circle cx="0" cy="-14" r="2.4" fill="#182635"/><circle cx="-28" cy="14" r="2.2" fill="#182635"/><circle cx="28" cy="14" r="2.2" fill="#182635"/><path d="M 0 -14 L -26 14" fill="none" stroke="#182635" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></g>
         
         <text x="298" y="344" font-size="16" font-weight="700" fill="#182635" text-anchor="end" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" data-dev-label="SA1" data-label-drag="SA1" style="cursor:move">SA1</text>
         <circle cx="360" cy="310" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="SA1:1"/><circle cx="332" cy="370" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="SA1:2"/><circle cx="388" cy="370" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="SA1:3"/>
@@ -47,15 +33,7 @@
         
       </g>
       <g class="dev" data-dev="SA2" style="cursor:pointer">
-        <g transform="translate(360 520) rotate(0)">
-      <line x1="0" y1="-30" x2="0" y2="-14" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <line x1="-28" y1="14" x2="-28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <line x1="28" y1="14" x2="28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <circle cx="0" cy="-14" r="2.4" fill="#182635"/>
-      <circle cx="-28" cy="14" r="2.2" fill="#182635"/>
-      <circle cx="28" cy="14" r="2.2" fill="#182635"/>
-      <path d="M 0 -14 L -26 14" fill="none" stroke="#182635" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>
+        <g transform="translate(360 520) rotate(0)"><line x1="0" y1="-30" x2="0" y2="-14" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><line x1="-28" y1="14" x2="-28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><line x1="28" y1="14" x2="28" y2="30" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><circle cx="0" cy="-14" r="2.4" fill="#182635"/><circle cx="-28" cy="14" r="2.2" fill="#182635"/><circle cx="28" cy="14" r="2.2" fill="#182635"/><path d="M 0 -14 L -26 14" fill="none" stroke="#182635" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></g>
         
         <text x="298" y="524" font-size="16" font-weight="700" fill="#182635" text-anchor="end" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" data-dev-label="SA2" data-label-drag="SA2" style="cursor:move">SA2</text>
         <circle cx="360" cy="490" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="SA2:1"/><circle cx="332" cy="550" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="SA2:2"/><circle cx="388" cy="550" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="SA2:3"/>
@@ -63,14 +41,7 @@
         
       </g>
       <g class="dev" data-dev="EL1" style="cursor:pointer">
-        <g transform="translate(360 660) rotate(0)">
-      <line x1="0" y1="-36" x2="0" y2="-20" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      <line x1="0" y1="20" x2="0" y2="36" stroke="#182635" stroke-width="2.2" stroke-linecap="round" />
-      
-      <circle cx="0" cy="0" r="20" fill="#ffffff" stroke="#182635" stroke-width="2.2"/>
-      <line x1="-12" y1="-12" x2="12" y2="12" stroke="#182635" stroke-width="1.8" stroke-linecap="round" />
-      <line x1="-12" y1="12" x2="12" y2="-12" stroke="#182635" stroke-width="1.8" stroke-linecap="round" />
-    </g>
+        <g transform="translate(360 660) rotate(0)"><line x1="0" y1="-36" x2="0" y2="-20" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><line x1="0" y1="20" x2="0" y2="36" stroke="#182635" stroke-width="2.2" stroke-linecap="round" /><circle cx="0" cy="0" r="20" fill="#ffffff" stroke="#182635" stroke-width="2.2"/><line x1="-12" y1="-12" x2="12" y2="12" stroke="#182635" stroke-width="1.8" stroke-linecap="round" /><line x1="-12" y1="12" x2="12" y2="-12" stroke="#182635" stroke-width="1.8" stroke-linecap="round" /></g>
         
         <text x="326" y="664" font-size="16" font-weight="700" fill="#182635" text-anchor="end" font-family="'Segoe UI','Microsoft YaHei','Noto Sans SC',sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" data-dev-label="EL1" data-label-drag="EL1" style="cursor:move">EL1</text>
         <circle cx="360" cy="624" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="EL1:1"/><circle cx="360" cy="696" r="3" fill="#f9fbff" stroke="#41556b" stroke-width="1.2" class="pin" data-pin="EL1:2"/>

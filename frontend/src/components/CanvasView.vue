@@ -19,6 +19,7 @@ const props = defineProps({
   tool: { type: String, default: 'select' }, // select | wire | place
   selected: { type: String, default: null },
   selectedIds: { type: Array, default: () => [] }, // 框选出来的多个元件
+  selectedSegs: { type: Array, default: () => [] }, // 框选命中的导线段 [{netId, segIndex}]，随元件一起拖动
   selectedNet: { type: String, default: null },
   selectedSeg: { type: Number, default: null }, // 当前选中的导线段（polyline 索引），用于段级删除
   selectedNote: { type: String, default: null },
@@ -35,7 +36,7 @@ const emit = defineEmits([
   'wire-net-to-pin', 'wire-net-to-net',
   'wire-delete', 'edit-net-label', 'label-move',
   'select-note', 'note-move', 'note-delete', 'place-note', 'edit-net-tag', 'edit-note',
-  'marquee-select', 'devices-move',
+  'marquee-select', 'devices-move', 'tag-move',
 ]);
 
 const GRID = 10;
@@ -51,6 +52,7 @@ let pressedDevice = null;
 let drag = null;
 let groupDrag = null; // 多选整体拖拽：{ start, items: [{id,x,y,el,lastX,lastY}], moved }
 let labelDrag = null; // 标号拖拽：{ id, start, baseX, baseY, textEl, hitEl, lastX, lastY }
+let tagDrag = null;   // 线号拖拽：{ netId, start, baseX, baseY, anchor, textEl, rectEl, lastX, lastY, moved }
 let noteDrag = null;  // 说明文本拖拽：{ id, start, ox, oy, lastX, lastY, moved, el }
 const marquee = ref(null); // 框选：{ start: {x,y}, cur: {x,y}, moved }（图纸坐标）
 
@@ -73,6 +75,7 @@ const svgHtml = computed(() => {
       showPins: props.showPins,
       selected: props.selected,
       selectedIds: props.selectedIds,
+      selectedSegs: props.selectedSegs,
       selectedNet: props.selectedNet,
       selectedNote: props.selectedNote,
       interactive: isBuild.value,
@@ -140,17 +143,92 @@ function deviceBBox(dev) {
   };
 }
 
-/** 框选命中的元件：包围盒与选框有交集即选中 */
-function devicesInMarquee(rect) {
-  if (!rect) return [];
+/** 线段与轴对齐矩形是否相交（Liang–Barsky 裁剪；端点落在框内也算命中） */
+function segHitsRect(a, b, r) {
+  let t0 = 0;
+  let t1 = 1;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const p = [-dx, dx, -dy, dy];
+  const q = [a.x - r.x, r.x + r.w - a.x, a.y - r.y, r.y + r.h - a.y];
+  for (let i = 0; i < 4; i += 1) {
+    if (Math.abs(p[i]) < 1e-9) {
+      if (q[i] < 0) return false;
+    } else {
+      const t = q[i] / p[i];
+      if (p[i] < 0) {
+        if (t > t1) return false;
+        if (t > t0) t0 = t;
+      } else {
+        if (t < t0) return false;
+        if (t < t1) t1 = t;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * 框选命中：元件按包围盒相交，导线按折线与选框相交。
+ * 返回 { ids, segs }；segs 记录 { netId, segIndex }（segIndex = net.geometry 的折线索引）。
+ * 电源母线（net.bus）属于骨架，不参与框选拖动，避免误拖整条三相母线。
+ */
+function marqueeSelection(rect) {
   const ids = [];
+  const segs = [];
+  if (!rect) return { ids, segs };
   for (const dev of props.circuit?.devices || []) {
     const bb = deviceBBox(dev);
     if (!bb) continue;
     const overlap = bb.x1 <= rect.x + rect.w && bb.x2 >= rect.x && bb.y1 <= rect.y + rect.h && bb.y2 >= rect.y;
     if (overlap) ids.push(dev.id);
   }
-  return ids;
+  const wrect = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+  for (const net of props.circuit?.nets || []) {
+    if (net.bus) continue;
+    const geo = Array.isArray(net.geometry) ? net.geometry : [];
+    geo.forEach((poly, pidx) => {
+      if (!Array.isArray(poly) || poly.length < 2) return;
+      for (let i = 1; i < poly.length; i += 1) {
+        const a = { x: poly[i - 1][0], y: poly[i - 1][1] };
+        const b = { x: poly[i][0], y: poly[i][1] };
+        if (segHitsRect(a, b, wrect)) {
+          segs.push({ netId: net.id, segIndex: pidx });
+          return; // 一条折线只记一次，避免重复
+        }
+      }
+    });
+  }
+  return { ids, segs };
+}
+
+/** 收集当前被选中元件，作为群组拖拽的初始项 */
+function selectedDeviceItems() {
+  return (props.selectedIds || [])
+    .map((sid) => {
+      const d = props.circuit.devices.find((x) => x.id === sid);
+      if (!d) return null;
+      return {
+        id: sid,
+        x: d.x,
+        y: d.y,
+        lastX: d.x,
+        lastY: d.y,
+        el: content.value?.querySelector?.(`g.dev[data-dev="${sid}"]`) || null,
+      };
+    })
+    .filter(Boolean);
+}
+
+/** 启动群组拖拽：被选中的元件与导线一起平移，松手后一次性提交（一个历史节点） */
+function startGroupDrag(point, items, e) {
+  const segEls = [];
+  for (const s of props.selectedSegs || []) {
+    const els = content.value?.querySelectorAll?.(`g.wire-seg[data-wire-seg="${s.netId}:${s.segIndex}"]`) || [];
+    for (const el of els) segEls.push(el);
+  }
+  groupDrag = { start: point, items, segEls, stepX: 0, stepY: 0, moved: false };
+  viewport.value?.setPointerCapture?.(e.pointerId);
 }
 
 function fit() {
@@ -308,6 +386,29 @@ function onViewportMove(e) {
     }
     return;
   }
+  if (tagDrag) {
+    const p = toSvgPoint(e);
+    if (!p) return;
+    const dx = p.x - tagDrag.start.x;
+    const dy = p.y - tagDrag.start.y;
+    if (!tagDrag.moved && Math.hypot(dx, dy) * transform.value.k < 3) return;
+    tagDrag.moved = true;
+    tagDrag.lastX = snap(tagDrag.baseX + dx);
+    tagDrag.lastY = snap(tagDrag.baseY + dy);
+    // 预览：线号文字与其透明命中区一起平移
+    if (tagDrag.textEl) {
+      tagDrag.textEl.setAttribute('x', tagDrag.lastX);
+      tagDrag.textEl.setAttribute('y', tagDrag.lastY);
+    }
+    if (tagDrag.rectEl) {
+      const rx = Number(tagDrag.rectEl.getAttribute('x')) || 0;
+      const ry = Number(tagDrag.rectEl.getAttribute('y')) || 0;
+      if (tagDrag.rectEl._bx == null) { tagDrag.rectEl._bx = rx; tagDrag.rectEl._by = ry; }
+      tagDrag.rectEl.setAttribute('x', tagDrag.rectEl._bx + (tagDrag.lastX - tagDrag.baseX));
+      tagDrag.rectEl.setAttribute('y', tagDrag.rectEl._by + (tagDrag.lastY - tagDrag.baseY));
+    }
+    return;
+  }
   if (labelDrag) {
     const p = toSvgPoint(e);
     if (!p) return;
@@ -348,7 +449,15 @@ function onViewportMove(e) {
     const dy = p.y - groupDrag.start.y;
     if (!groupDrag.moved && Math.hypot(dx, dy) * transform.value.k < 4) return;
     groupDrag.moved = true;
-    // 拖动中只做 DOM 变换预览（每个元件独立吸附网格），松手后一次性提交
+    // 统一吸附步长（元件坐标本身就是 10 的倍数，故各元件步长一致），
+    // 导线平移必须用同一增量，才能与元件保持相对位置。
+    const baseX = groupDrag.items.length ? groupDrag.items[0].x : 0;
+    const baseY = groupDrag.items.length ? groupDrag.items[0].y : 0;
+    const stepX = snap(baseX + dx) - baseX;
+    const stepY = snap(baseY + dy) - baseY;
+    groupDrag.stepX = stepX;
+    groupDrag.stepY = stepY;
+    // 拖动中只做 DOM 变换预览（不重渲染整图，保证流畅），松手后一次性提交
     for (const it of groupDrag.items) {
       it.lastX = snap(it.x + dx);
       it.lastY = snap(it.y + dy);
@@ -356,6 +465,11 @@ function onViewportMove(e) {
         it.el.style.transform = `translate(${it.lastX - it.x}px, ${it.lastY - it.y}px)`;
         it.el.style.transition = 'none';
       }
+    }
+    // 已选导线同步平移预览
+    for (const el of groupDrag.segEls) {
+      el.style.transform = `translate(${stepX}px, ${stepY}px)`;
+      el.style.transition = 'none';
     }
     return;
   }
@@ -397,6 +511,7 @@ function onSvgDown(e) {
   const point = toSvgPoint(e);
   const pinEl = e.target.closest?.('[data-pin]');
   const netEl = e.target.closest?.('[data-net]');
+  const tagEl = e.target.closest?.('[data-tag-drag]');
   const labelEl = e.target.closest?.('[data-label-drag]');
   const devEl = e.target.closest?.('[data-dev]');
   const tapEl = e.target.closest?.('[data-tap]');
@@ -418,6 +533,32 @@ function onSvgDown(e) {
         el: noteEl,
       };
       emit('select-note', id);
+      viewport.value?.setPointerCapture?.(e.pointerId);
+      return;
+    }
+  }
+
+  /* --- 线号（紫色大字）：搭建模式下按住可拖动位置；点击则选中该导线，便于右侧改线号 ---
+   * 线号 <g> 同时带 data-net，必须在这里拦下，否则会落到「选中导线」分支而无法拖动。 */
+  if (tagEl && isBuild.value && !props.locked && props.tool !== 'wire') {
+    const netId = tagEl.getAttribute('data-tag-drag');
+    const textEl = tagEl.querySelector?.('text') || null;
+    if (textEl && netId) {
+      emit('select-net', netId, null);
+      const bx = Number(textEl.getAttribute('x')) || 0;
+      const by = Number(textEl.getAttribute('y')) || 0;
+      tagDrag = {
+        netId,
+        start: point,
+        baseX: bx,
+        baseY: by,
+        anchor: textEl.getAttribute('text-anchor') || 'start',
+        textEl,
+        rectEl: tagEl.querySelector?.('rect') || null,
+        lastX: bx,
+        lastY: by,
+        moved: false,
+      };
       viewport.value?.setPointerCapture?.(e.pointerId);
       return;
     }
@@ -538,25 +679,11 @@ function onSvgDown(e) {
     if (isBuild.value && !props.locked) {
       const dev = props.circuit.devices.find((d) => d.id === id);
       if (!dev) return;
-      /* 框选多元件后：拖动任意一个被选中元件 = 整体移动（松手一次提交一个历史节点） */
-      const multi = (props.selectedIds || []).length > 1 && props.selectedIds.includes(id);
+      /* 框选后：拖动任意一个被选中元件 = 元件与已选导线整体移动（松手一次提交一个历史节点） */
+      const selIds = props.selectedIds || [];
+      const multi = selIds.includes(id) && (selIds.length > 1 || (props.selectedSegs || []).length > 0);
       if (multi) {
-        const items = (props.selectedIds || [])
-          .map((sid) => {
-            const d = props.circuit.devices.find((x) => x.id === sid);
-            if (!d) return null;
-            return {
-              id: sid,
-              x: d.x,
-              y: d.y,
-              lastX: d.x,
-              lastY: d.y,
-              el: content.value?.querySelector?.(`g.dev[data-dev="${sid}"]`) || null,
-            };
-          })
-          .filter(Boolean);
-        groupDrag = { start: point, items, moved: false };
-        viewport.value?.setPointerCapture?.(e.pointerId);
+        startGroupDrag(point, selectedDeviceItems(), e);
         return;
       }
       drag = { id, start: point, devX: dev.x, devY: dev.y, lastX: dev.x, lastY: dev.y, moved: false, el: devEl };
@@ -574,6 +701,21 @@ function onSvgDown(e) {
       emit('activate', id);
     }
     return;
+  }
+
+  /* --- 已被框选中的导线：按住拖动 = 与元件一起整体平移 --- */
+  if (isBuild.value && !props.locked && props.tool !== 'wire' && (props.selectedSegs || []).length) {
+    const segEl = e.target.closest?.('[data-seg]');
+    if (segEl) {
+      const netId = segEl.getAttribute('data-net');
+      const segIndex = Number(segEl.getAttribute('data-seg'));
+      const picked = (props.selectedSegs || []).some((s) => s.netId === netId && s.segIndex === segIndex);
+      if (picked) {
+        // 点已选中的导线拖动：与同一批被框选的元件一起整体平移
+        startGroupDrag(point, selectedDeviceItems(), e);
+        return;
+      }
+    }
   }
 
   /* --- 导线：选中网络（便于设置网络标号 / 段级删除） ---
@@ -644,20 +786,34 @@ function onWindowUp() {
     marquee.value = null;
     const rect = marqueeRectOf(m);
     if (rect && (rect.w > 4 || rect.h > 4)) {
-      // 拖动框选：提交命中元件；一个都没框到则视为清空选择
-      emit('marquee-select', devicesInMarquee(rect));
+      // 拖动框选：同时提交命中元件与导线；一个都没框到则视为清空选择
+      emit('marquee-select', marqueeSelection(rect));
     } else {
-      emit('marquee-select', []);
+      emit('marquee-select', { ids: [], segs: [] });
     }
   }
   if (groupDrag) {
     if (groupDrag.moved) {
-      emit('devices-move', groupDrag.items.map((it) => ({ id: it.id, x: it.lastX, y: it.lastY })));
-    } else {
+      // 元件与导线合并提交：编辑器侧只压一个历史节点，Ctrl+Z 一次撤销整组移动
+      emit('devices-move', {
+        moves: groupDrag.items.map((it) => ({ id: it.id, x: it.lastX, y: it.lastY })),
+        segs: (props.selectedSegs || []).map((s) => ({ ...s })),
+        dx: groupDrag.stepX,
+        dy: groupDrag.stepY,
+      });
+    } else if (groupDrag.items.length) {
       // 未拖动：普通点击 → 单选该元件
-      emit('select', groupDrag.items[0]?.id || null);
+      emit('select', groupDrag.items[0].id);
+    } else if ((props.selectedSegs || []).length) {
+      // 只选中了导线：点击保持导线选中状态
+      const s = props.selectedSegs[0];
+      emit('select-net', s.netId, s.segIndex);
     }
     groupDrag = null;
+  }
+  if (tagDrag) {
+    if (tagDrag.moved) emit('tag-move', tagDrag.netId, tagDrag.lastX, tagDrag.lastY, tagDrag.anchor);
+    tagDrag = null;
   }
   if (noteDrag) {
     if (noteDrag.moved) emit('note-move', noteDrag.id, noteDrag.lastX, noteDrag.lastY);
@@ -688,11 +844,23 @@ function onKeydown(e) {
     if (wireDraft.value) { wireDraft.value = null; emit('wire-cancel'); }
     if (marquee.value) marquee.value = null;
     if (groupDrag) {
-      // 恢复整体拖拽预览到初始位置
+      // 恢复整体拖拽预览到初始位置（元件 + 导线）
       for (const it of groupDrag.items) {
         if (it.el) it.el.style.transform = '';
       }
+      for (const el of groupDrag.segEls) el.style.transform = '';
       groupDrag = null;
+    }
+    if (tagDrag) {
+      if (tagDrag.textEl) {
+        tagDrag.textEl.setAttribute('x', tagDrag.baseX);
+        tagDrag.textEl.setAttribute('y', tagDrag.baseY);
+      }
+      if (tagDrag.rectEl && tagDrag.rectEl._bx != null) {
+        tagDrag.rectEl.setAttribute('x', tagDrag.rectEl._bx);
+        tagDrag.rectEl.setAttribute('y', tagDrag.rectEl._by);
+      }
+      tagDrag = null;
     }
     if (noteDrag) {
       if (noteDrag.el) noteDrag.el.style.transform = '';
@@ -715,7 +883,11 @@ function onKeydown(e) {
       labelDrag = null;
     }
     // 搭建模式：Esc 顺带清空当前选择（含框选）
-    if (isBuild.value && !props.locked && (props.selected || props.selectedNet || props.selectedNote || (props.selectedIds || []).length)) {
+    if (
+      isBuild.value &&
+      !props.locked &&
+      (props.selected || props.selectedNet || props.selectedNote || (props.selectedIds || []).length || (props.selectedSegs || []).length)
+    ) {
       emit('select', null);
     }
     return;
@@ -811,7 +983,7 @@ defineExpose({ fit, zoomIn, zoomOut });
       {{ wireDraft ? '走线中：点击拐点改变走向，点击目标引脚完成接线（Esc 取消）' : '走线：点击起点引脚开始' }}
     </div>
     <div v-else-if="armedType" class="canvas-tip">在画布上点击放置元件（Esc 取消）</div>
-    <div v-else-if="isBuild" class="canvas-tip subtle">空白处按住拖动可框选多个元件；拖动选中元件可整体移动；点击导线可设置网络标号</div>
+    <div v-else-if="isBuild" class="canvas-tip subtle">空白处按住拖动可框选元件与导线；拖动任一选中对象可整体移动；线号可直接拖动</div>
     <div v-else-if="mode === 'course' && snapshot && !snapshot.shorts.length" class="canvas-tip subtle">
       点击开关/断路器可操作；按钮为按下生效、松开复位
     </div>

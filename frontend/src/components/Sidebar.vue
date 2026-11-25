@@ -19,8 +19,11 @@ const props = defineProps({
   buildMode: { type: Boolean, default: false },
   /** 刚从工作台发布的课程 id：自动展开它所属的分类与「我的电路」子分组 */
   revealId: { type: String, default: null },
+  /** 课程目录覆盖表：hidden 删除 / order 排序 / promoted 从「我的电路」加入课程 */
+  catalog: { type: Object, default: () => ({ hidden: [], order: [], promoted: [] }) },
 });
-const emit = defineEmits(['open', 'open-build', 'delete']);
+/** 上移/下移/删除已统一移到「打开页面上端」的目录操作条，侧栏只负责打开与加入 */
+const emit = defineEmits(['open', 'open-build', 'delete', 'promote']);
 
 /* 课程仿真只有两个大类，每个大类内部各自包含一节「我的电路」 */
 const categories = [
@@ -41,16 +44,30 @@ function groupOf(c) {
   return c.supply?.system === '3ph' ? 'drive' : 'lighting';
 }
 
-/** 某大类下的内置课程（按 order 排序） */
-function builtinList(key) {
-  return props.circuits
-    .filter((c) => c.builtin && groupOf(c) === key)
-    .sort((a, b) => (a.order || 99) - (b.order || 99));
+const hiddenSet = computed(() => new Set(props.catalog?.hidden || []));
+const promotedSet = computed(() => new Set(props.catalog?.promoted || []));
+const orderList = computed(() => props.catalog?.order || []);
+
+/** 与 App.vue 的 courseCompare 保持一致：先按覆盖表 order，再按课程自带 order */
+function compareCourse(a, b) {
+  const i = orderList.value.indexOf(a.id);
+  const j = orderList.value.indexOf(b.id);
+  const va = i >= 0 ? i : Number.MAX_SAFE_INTEGER;
+  const vb = j >= 0 ? j : Number.MAX_SAFE_INTEGER;
+  if (va !== vb) return va - vb;
+  return (a.order || 99) - (b.order || 99);
 }
-/** 某大类下「我的电路」的内容（用户发布 / 搭建模式保存的课程，按更新时间倒序） */
+
+/** 某大类下的课程列表：内置课程 + 从「我的电路」加入的课程（排除已删除项） */
+function courseList(key) {
+  return props.circuits
+    .filter((c) => groupOf(c) === key && !hiddenSet.value.has(c.id) && (c.builtin || promotedSet.value.has(c.id)))
+    .sort(compareCourse);
+}
+/** 某大类下「我的电路」的内容：未加入课程列表的用户课程，按更新时间倒序 */
 function mineList(key) {
   return props.circuits
-    .filter((c) => !c.builtin && groupOf(c) === key)
+    .filter((c) => !c.builtin && groupOf(c) === key && !promotedSet.value.has(c.id))
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 }
 
@@ -96,23 +113,30 @@ const totalCount = computed(() => props.circuits.length);
         >
           <span class="caret">▾</span>
           <span class="cat-head-name">{{ cat.icon }} {{ cat.name }}</span>
-          <span class="cat-count">{{ builtinList(cat.key).length + mineList(cat.key).length }}</span>
+          <span class="cat-count">{{ courseList(cat.key).length + mineList(cat.key).length }}</span>
         </div>
 
         <div v-show="!collapsed.cat[cat.key]" class="cat-body" :data-cat-body="cat.key">
-          <!-- 内置课程 -->
+          <!-- 二级 ①：课程电路小节（按目录顺序连续标号 1..N，操作在页面上端） -->
+          <div class="section-label">
+            <span class="section-line" />
+            <span class="section-name">📚 课程电路</span>
+            <span class="section-count">{{ courseList(cat.key).length }} 节</span>
+          </div>
           <div
-            v-for="c in builtinList(cat.key)"
+            v-for="(c, ci) in courseList(cat.key)"
             :key="c.id"
             class="course-item"
-            :class="{ active: !buildMode && c.id === currentId }"
+            :class="{ active: !buildMode && c.id === currentId, user: !c.builtin, reveal: c.id === revealId }"
+            :data-course-id="c.id"
             @click="emit('open', c.id)"
           >
-            <div class="no">{{ c.order || '•' }}</div>
+            <div class="no" :data-index="ci + 1">{{ ci + 1 }}</div>
             <div class="course-text">
               <div class="name">{{ c.title }}</div>
               <div class="meta">{{ difficultyLabel[(c.difficulty || 1) - 1] }} · 约 {{ c.duration || 15 }} 分钟</div>
             </div>
+            <span class="item-hint" title="打开该课程">›</span>
           </div>
 
           <!-- 二级：该大类下的「我的电路」，同样可折叠 -->
@@ -143,6 +167,7 @@ const totalCount = computed(() => props.circuits.length);
                   <div class="meta">{{ difficultyLabel[(c.difficulty || 1) - 1] }} · 约 {{ c.duration || 15 }} 分钟</div>
                 </div>
                 <div class="item-actions" @click.stop>
+                  <button class="add-btn" title="加入到课程电路" @click="emit('promote', c.id)">＋</button>
                   <template v-if="pendingDelete === c.id">
                     <button class="del-confirm" title="确认删除该电路" @click="confirmDelete(c.id)">删除?</button>
                     <button class="del-cancel" title="取消" @click="cancelDelete">取消</button>

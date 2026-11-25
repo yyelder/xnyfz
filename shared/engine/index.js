@@ -237,6 +237,13 @@ export class SimulationEngine {
       }
       case 'button': {
         const pressed = !!groupStates[groupKeyOf(dev)]?.pressed;
+        // 复合按钮（一常开 + 一常闭，共用推杆）：按下时 NO 闭合、NC 断开
+        if (type.polesNO || type.polesNC) {
+          const out = [];
+          if (pressed && Array.isArray(type.polesNO)) out.push(...type.polesNO);
+          if (!pressed && Array.isArray(type.polesNC)) out.push(...type.polesNC);
+          return out;
+        }
         const closed = type.nc ? !pressed : pressed;
         return closed ? poles : [];
       }
@@ -245,7 +252,15 @@ export class SimulationEngine {
           const sel = rt.state === 'b' ? type.polesB : type.polesA;
           return sel || [];
         }
-        return rt.state === 'closed' ? poles : [];
+        const on = rt.state === 'closed';
+        // 复合行程开关：撞块压下（closed）时 NO 闭合、NC 断开
+        if (type.polesNO || type.polesNC) {
+          const out = [];
+          if (on && Array.isArray(type.polesNO)) out.push(...type.polesNO);
+          if (!on && Array.isArray(type.polesNC)) out.push(...type.polesNC);
+          return out;
+        }
+        return on ? poles : [];
       }
       case 'breaker':
         return rt.state === 'closed' && !rt.tripped ? poles : [];
