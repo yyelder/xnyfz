@@ -409,10 +409,11 @@ function renderNote(note, { interactive, selected }) {
       );
     }
     if (net.label?.text) {
+      // 带 data-net：拖动整条母线时，标签与线体一起做预览平移
       labelParts.push(
         `<text x="${net.label.x}" y="${net.label.y}" font-size="12" font-weight="600" fill="${color}" text-anchor="${
           net.label.anchor || 'start'
-        }" font-family="${FONT}">${esc(net.label.text)}</text>`
+        }" font-family="${FONT}" data-net="${net.id}" data-bus-label="${net.id}">${esc(net.label.text)}</text>`
       );
     }
     // 导线编号（线号）：用户要求紫色、大字体、可拖动。
@@ -447,8 +448,11 @@ function renderNote(note, { interactive, selected }) {
     // 网络标号：原理图标准画法，小旗标签
     if (net.name) labelParts.push(netFlag(net, geo, color));
 
+    // data-bus：插入的三相/单相电源母线，编辑模式下可直接按住整条拖动（见 CanvasView.busDrag）
     wireParts.push(
-      `<g class="wire" data-net="${net.id}" style="cursor:${interactive ? 'pointer' : 'default'}">${parts.join('')}</g>`
+      `<g class="wire" data-net="${net.id}" data-bus="${net.bus ? 1 : 0}" style="cursor:${
+        net.bus && interactive ? 'move' : interactive ? 'pointer' : 'default'
+      }">${parts.join('')}</g>`
     );
   });
 

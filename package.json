@@ -18,9 +18,14 @@
     "test:wiring": "node scripts/test-wiring-ux.mjs",
     "test:newfeatures": "node scripts/test-new-features.mjs",
     "test:notestag": "node scripts/test-notes-tag.mjs",
-    "test:e2e": "node scripts/e2e-editor.mjs && node scripts/e2e-features.mjs && node scripts/e2e-linkage.mjs && node scripts/e2e-props.mjs && node scripts/e2e-wiring-ux.mjs && node scripts/e2e-new-features.mjs && node scripts/e2e-notes-tag.mjs && node scripts/e2e-marquee-course.mjs && node scripts/e2e-seg-tag-drag.mjs && node scripts/e2e-sidebar-fold.mjs && node scripts/e2e-course-catalog.mjs",
+    "test:e2e": "node scripts/e2e-editor.mjs && node scripts/e2e-features.mjs && node scripts/e2e-linkage.mjs && node scripts/e2e-props.mjs && node scripts/e2e-wiring-ux.mjs && node scripts/e2e-new-features.mjs && node scripts/e2e-notes-tag.mjs && node scripts/e2e-marquee-course.mjs && node scripts/e2e-seg-tag-drag.mjs && node scripts/e2e-sidebar-fold.mjs && node scripts/e2e-course-catalog.mjs && node scripts/e2e-course-edit.mjs && node scripts/e2e-bus-move.mjs",
     "seed:dump": "node scripts/dump-db.mjs",
-    "test:devices": "node scripts/test-device-pack.mjs"
+    "test:devices": "node scripts/test-device-pack.mjs",
+    "test:timer": "node scripts/test-timer-symbols.mjs",
+    "test:symbols": "node scripts/test-symbol-sq-fr.mjs",
+    "test:bus": "node scripts/test-bus-move.mjs",
+    "preview:kt": "node scripts/gen-kt-preview.mjs",
+    "preview:symbols": "node scripts/gen-symbol-preview.mjs"
   },
   "dependencies": {
     "vue": "^3.5.13"

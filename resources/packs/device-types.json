@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "pack": "core-devices",
   "name": "常用低压电器元件库",
-  "version": "1.6.0",
+  "version": "1.7.2",
   "note": "元件库为纯数据描述：引脚坐标、导电策略、符号名称。新增元件只需在此追加条目并实现对应符号绘制，无需改动仿真引擎。",
   "types": [
     {
@@ -406,14 +406,14 @@
     },
     {
       "id": "kt_coil",
-      "name": "时间继电器线圈",
+      "name": "时间继电器通电延时线圈",
       "short": "KT",
       "category": "control",
       "group": "timer",
       "role": "load",
       "timer": true,
       "delay": 3,
-      "symbol": "coil",
+      "symbol": "coil_timer_on",
       "pins": [
         {
           "id": "A1",
@@ -434,7 +434,43 @@
       ],
       "showPinLabels": true,
       "labelPos": "left",
-      "desc": "通电后开始计时，达到整定时间后带动延时触点动作。"
+      "desc": "通电延时型（缓吸）：线圈得电达到整定时间后触点动作，失电立即复位。",
+      "timerMode": "on",
+      "subgroup": "coil"
+    },
+    {
+      "id": "kt_coil_off",
+      "name": "时间继电器断电延时线圈",
+      "short": "KT",
+      "category": "control",
+      "group": "timer",
+      "role": "load",
+      "timer": true,
+      "delay": 3,
+      "symbol": "coil_timer_off",
+      "pins": [
+        {
+          "id": "A1",
+          "x": 0,
+          "y": -36,
+          "dir": "up"
+        },
+        {
+          "id": "A2",
+          "x": 0,
+          "y": 36,
+          "dir": "down"
+        }
+      ],
+      "loadPins": [
+        "A1",
+        "A2"
+      ],
+      "showPinLabels": true,
+      "labelPos": "left",
+      "desc": "断电延时型（缓放）：线圈得电触点立即动作，失电后延时复位。",
+      "timerMode": "off",
+      "subgroup": "coil"
     },
     {
       "id": "km_no",
@@ -466,7 +502,13 @@
       ],
       "labelGap": 26,
       "labelPos": "left",
-      "desc": "与线圈同组，线圈得电时闭合，用于自锁或联锁。"
+      "desc": "与线圈同组，线圈得电时闭合，用于自锁或联锁。",
+      "bbox": {
+        "minX": -12,
+        "maxX": 18,
+        "minY": -28,
+        "maxY": 28
+      }
     },
     {
       "id": "km_nc",
@@ -499,7 +541,13 @@
       ],
       "labelGap": 26,
       "labelPos": "left",
-      "desc": "与线圈同组，线圈得电时断开，用于互锁。"
+      "desc": "与线圈同组，线圈得电时断开，用于互锁。",
+      "bbox": {
+        "minX": -12,
+        "maxX": 18,
+        "minY": -28,
+        "maxY": 28
+      }
     },
     {
       "id": "km_no_3p",
@@ -562,7 +610,13 @@
         ]
       ],
       "labelPos": "left",
-      "desc": "接通与断开电动机主电路，允许通过大电流。"
+      "desc": "接通与断开电动机主电路，允许通过大电流。",
+      "bbox": {
+        "minX": -86.5,
+        "maxX": 86.5,
+        "minY": -30,
+        "maxY": 30
+      }
     },
     {
       "id": "ka_coil",
@@ -625,7 +679,13 @@
       ],
       "labelGap": 26,
       "labelPos": "left",
-      "desc": "与 KA 线圈同编号，线圈得电时闭合，用于扩展触点数量或信号中转。"
+      "desc": "与 KA 线圈同编号，线圈得电时闭合，用于扩展触点数量或信号中转。",
+      "bbox": {
+        "minX": -12,
+        "maxX": 18,
+        "minY": -28,
+        "maxY": 28
+      }
     },
     {
       "id": "ka_nc",
@@ -658,7 +718,13 @@
       ],
       "labelGap": 26,
       "labelPos": "left",
-      "desc": "与 KA 线圈同编号，线圈得电时断开，用于互锁或信号切换。"
+      "desc": "与 KA 线圈同编号，线圈得电时断开，用于互锁或信号切换。",
+      "bbox": {
+        "minX": -12,
+        "maxX": 18,
+        "minY": -28,
+        "maxY": 28
+      }
     },
     {
       "id": "fr_main",
@@ -721,7 +787,14 @@
         ]
       ],
       "labelPos": "left",
-      "desc": "电动机过载时热元件发热，推动常闭触点断开，切断控制电路。"
+      "desc": "电动机过载时热元件发热，推动常闭触点断开，切断控制电路。",
+      "labelGap": 16,
+      "bbox": {
+        "minX": -112,
+        "maxX": 112,
+        "minY": -30,
+        "maxY": 30
+      }
     },
     {
       "id": "fr_nc",
@@ -752,13 +825,57 @@
           "2"
         ]
       ],
-      "labelGap": 32,
+      "labelGap": 30,
       "labelPos": "left",
-      "desc": "过载脱扣后断开，使控制电路失电，实现过载保护。"
+      "desc": "过载脱扣后断开，使控制电路失电，实现过载保护。",
+      "bbox": {
+        "minX": -20,
+        "maxX": 34,
+        "minY": -28,
+        "maxY": 28
+      }
+    },
+    {
+      "id": "fr_no",
+      "name": "热继电器常开触点",
+      "short": "FR",
+      "category": "control",
+      "group": "thermal",
+      "role": "thermal",
+      "symbol": "thermal_no",
+      "pins": [
+        {
+          "id": "1",
+          "x": 0,
+          "y": -28,
+          "dir": "up"
+        },
+        {
+          "id": "2",
+          "x": 0,
+          "y": 28,
+          "dir": "down"
+        }
+      ],
+      "poles": [
+        [
+          "1",
+          "2"
+        ]
+      ],
+      "labelGap": 24,
+      "labelPos": "left",
+      "desc": "常开报警触点：过载脱扣后闭合，可接报警灯或信号回路。",
+      "bbox": {
+        "minX": -20,
+        "maxX": 34,
+        "minY": -28,
+        "maxY": 28
+      }
     },
     {
       "id": "kt_no",
-      "name": "时间继电器延时闭合常开触点",
+      "name": "时间继电器延时闭合动合触点",
       "short": "KT",
       "category": "control",
       "group": "timer",
@@ -787,11 +904,14 @@
       ],
       "labelGap": 42,
       "labelPos": "left",
-      "desc": "线圈通电达到整定时间后闭合。"
+      "desc": "通电延时：线圈得电达到整定时间后闭合，失电立即断开。",
+      "timerMode": "on",
+      "delayAction": "close",
+      "subgroup": "delay-close"
     },
     {
       "id": "kt_nc",
-      "name": "时间继电器延时断开常闭触点",
+      "name": "时间继电器延时断开动断触点",
       "short": "KT",
       "category": "control",
       "group": "timer",
@@ -821,7 +941,164 @@
       ],
       "labelGap": 42,
       "labelPos": "left",
-      "desc": "线圈通电达到整定时间后断开。"
+      "desc": "通电延时：线圈得电达到整定时间后断开，失电立即闭合。",
+      "timerMode": "on",
+      "delayAction": "open",
+      "subgroup": "delay-open"
+    },
+    {
+      "id": "kt_off_no",
+      "name": "时间继电器延时断开动合触点",
+      "short": "KT",
+      "category": "control",
+      "group": "timer",
+      "role": "contact",
+      "delay": true,
+      "symbol": "kt_off_no",
+      "pins": [
+        {
+          "id": "1",
+          "x": 0,
+          "y": -28,
+          "dir": "up"
+        },
+        {
+          "id": "2",
+          "x": 0,
+          "y": 28,
+          "dir": "down"
+        }
+      ],
+      "poles": [
+        [
+          "1",
+          "2"
+        ]
+      ],
+      "labelGap": 42,
+      "labelPos": "left",
+      "desc": "断电延时：线圈得电立即闭合，失电后延时断开。",
+      "timerMode": "off",
+      "delayAction": "open",
+      "subgroup": "delay-open"
+    },
+    {
+      "id": "kt_off_nc",
+      "name": "时间继电器延时闭合动断触点",
+      "short": "KT",
+      "category": "control",
+      "group": "timer",
+      "role": "contact",
+      "delay": true,
+      "nc": true,
+      "symbol": "kt_off_nc",
+      "pins": [
+        {
+          "id": "1",
+          "x": 0,
+          "y": -28,
+          "dir": "up"
+        },
+        {
+          "id": "2",
+          "x": 0,
+          "y": 28,
+          "dir": "down"
+        }
+      ],
+      "poles": [
+        [
+          "1",
+          "2"
+        ]
+      ],
+      "labelGap": 42,
+      "labelPos": "left",
+      "desc": "断电延时：线圈得电立即断开，失电后延时闭合。",
+      "timerMode": "off",
+      "delayAction": "close",
+      "subgroup": "delay-close"
+    },
+    {
+      "id": "kt_inst_no",
+      "name": "时间继电器瞬动动合触点",
+      "short": "KT",
+      "category": "control",
+      "group": "timer",
+      "role": "contact",
+      "symbol": "kt_inst_no",
+      "pins": [
+        {
+          "id": "1",
+          "x": 0,
+          "y": -28,
+          "dir": "up"
+        },
+        {
+          "id": "2",
+          "x": 0,
+          "y": 28,
+          "dir": "down"
+        }
+      ],
+      "poles": [
+        [
+          "1",
+          "2"
+        ]
+      ],
+      "labelGap": 42,
+      "labelPos": "left",
+      "desc": "瞬动触点：不延时，随线圈得电立即闭合。",
+      "timerMode": "instant",
+      "subgroup": "instant",
+      "bbox": {
+        "minX": -12,
+        "maxX": 18,
+        "minY": -28,
+        "maxY": 28
+      }
+    },
+    {
+      "id": "kt_inst_nc",
+      "name": "时间继电器瞬动动断触点",
+      "short": "KT",
+      "category": "control",
+      "group": "timer",
+      "role": "contact",
+      "nc": true,
+      "symbol": "kt_inst_nc",
+      "pins": [
+        {
+          "id": "1",
+          "x": 0,
+          "y": -28,
+          "dir": "up"
+        },
+        {
+          "id": "2",
+          "x": 0,
+          "y": 28,
+          "dir": "down"
+        }
+      ],
+      "poles": [
+        [
+          "1",
+          "2"
+        ]
+      ],
+      "labelGap": 42,
+      "labelPos": "left",
+      "desc": "瞬动触点：不延时，随线圈得电立即断开。",
+      "timerMode": "instant",
+      "subgroup": "instant",
+      "bbox": {
+        "minX": -12,
+        "maxX": 18,
+        "minY": -28,
+        "maxY": 28
+      }
     },
     {
       "id": "el_lamp",
@@ -1022,7 +1299,7 @@
     },
     {
       "id": "socket_1p",
-      "name": "单相插座",
+      "name": "单相两眼插座",
       "short": "XS",
       "category": "load",
       "group": "socket",
@@ -1046,9 +1323,95 @@
         "1",
         "2"
       ],
+      "labelGap": 30,
+      "labelPos": "left",
+      "desc": "单相三孔插座，作为用电负荷接在支路末端。",
+      "bbox": {
+        "minX": -18,
+        "maxX": 18,
+        "minY": -36,
+        "maxY": 36
+      }
+    },
+    {
+      "id": "socket_3w",
+      "name": "单相三眼插座",
+      "short": "XS",
+      "category": "load",
+      "group": "socket",
+      "role": "load",
+      "symbol": "socket3w",
+      "pins": [
+        {
+          "id": "PE",
+          "x": 0,
+          "y": -44,
+          "dir": "up"
+        },
+        {
+          "id": "L",
+          "x": -8,
+          "y": 44,
+          "dir": "down"
+        },
+        {
+          "id": "N",
+          "x": 8,
+          "y": 44,
+          "dir": "down"
+        }
+      ],
+      "loadPins": [
+        "L",
+        "N"
+      ],
       "labelGap": 34,
       "labelPos": "left",
-      "desc": "单相三孔插座，作为用电负荷接在支路末端。"
+      "desc": "单相三眼插座：L/N 为工作极、PE 为保护接地极，接线遵循「左零右火上接地」。",
+      "bbox": {
+        "minX": -18,
+        "maxX": 18,
+        "minY": -44,
+        "maxY": 44
+      }
+    },
+    {
+      "id": "socket_3ph",
+      "name": "三相插座",
+      "short": "XS",
+      "category": "power",
+      "group": "socket",
+      "role": "decor",
+      "symbol": "socket3ph",
+      "pins": [
+        {
+          "id": "U",
+          "x": -38,
+          "y": -26,
+          "dir": "up"
+        },
+        {
+          "id": "V",
+          "x": 0,
+          "y": -40,
+          "dir": "up"
+        },
+        {
+          "id": "W",
+          "x": 38,
+          "y": -26,
+          "dir": "up"
+        }
+      ],
+      "labelGap": 46,
+      "labelPos": "left",
+      "desc": "三相插座（3P）：三个电极均为相线，作为三相设备的取电点（图形符号按国标单线画法，仅作接线示意）。",
+      "bbox": {
+        "minX": -40,
+        "maxX": 40,
+        "minY": -40,
+        "maxY": 8
+      }
     },
     {
       "id": "voltmeter",

@@ -74,14 +74,15 @@ check('KA 元件默认标号在左侧', ['ka_coil', 'ka_no', 'ka_nc'].every((id)
     nets: [],
   };
   const svg = renderCircuit({ circuit, deviceTypes, snapshot: null, options: { interactive: true } });
-  // labelPos=left, gap=26 → lx = minX(-0) - 26 = -26, 加偏移 -40 → -66；ly = 4 + (-30) = -26
+  // labelPos=left, gap=26 → lx = bbox.minX(-12) - 26 = -38, 加偏移 -40 → -78；ly = 4 + (-30) = -26
+  // （km_no 的包围盒按「静触头 + 斜刀」取 -12…18，标号不再压在斜刀上）
   const m = svg.match(/data-dev-label="D1"[^>]*x="([^"]+)"[^>]*y="([^"]+)"/);
   const textTag = (svg.match(/<text[^>]*data-dev-label="D1"[^>]*>/) || [])[0] || '';
   const xm = textTag.match(/x="([^"]+)"/);
   const ym = textTag.match(/y="([^"]+)"/);
   const lx = xm ? Number(xm[1]) : NaN;
   const ly = ym ? Number(ym[1]) : NaN;
-  check('标号应用 labelOffset 偏移（x 左移 40）', Math.abs(lx - (200 - 66)) < 1, `labelX=${lx}`);
+  check('标号应用 labelOffset 偏移（x 左移 40）', Math.abs(lx - (200 - 78)) < 1, `labelX=${lx}`);
   check('标号应用 labelOffset 偏移（y 上移 30）', Math.abs(ly - (100 - 26)) < 1, `labelY=${ly}`);
   check('标号带 data-label-drag 命中标识', svg.includes('data-label-drag="D1"'));
 }

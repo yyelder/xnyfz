@@ -139,8 +139,9 @@ export class SimulationEngine {
     /** 触点组状态（线圈得电 / 按钮按下），跨 compute 调用保持，是「自锁」成立的前提 */
     this.groups = {};
     for (const dev of this.devices.values()) this.groups[groupKeyOf(dev)] = { energized: false, pressed: false };
-    /** 延时触点组动作状态 */
+    /** 通电延时：线圈得电计时 → done；断电延时：线圈失电计时 → active */
     this.timerDone = {};
+    this.offTimer = {};
     this.faults = [];
     this.protection = { tripped: [], at: null };
     this.snapshot = null;
@@ -215,18 +216,20 @@ export class SimulationEngine {
 
   // ---------------------------------------------------------------- 导电判定
   /** 返回该元件当前导通的引脚对（空数组表示断开） */
-  conductionPairs(dev, type, groupStates, timerDone) {
+  conductionPairs(dev, type, groupStates, timerDone, offTimer) {
     const rt = this.rt[dev.id];
     const role = type.role;
     const poles = type.poles || [];
 
     const activeOf = () => {
-      // 延时元件的定时器按组存放 { since, done }，必须取 .done 判断是否已动作
-      if (type.timer || type.delay) {
-        const timer = timerDone[groupKeyOf(dev)];
-        return !!(timer && timer.done);
-      }
-      return !!groupStates[groupKeyOf(dev)]?.energized;
+      const key = groupKeyOf(dev);
+      // timerMode：on=通电延时（旧数据无此字段但有 timer/delay 时按 on 处理，保持兼容）；
+      // off=断电延时（线圈失电后延时复位）；instant=瞬动（随线圈立即动作）。
+      const mode = type.timerMode || (type.timer || type.delay ? 'on' : 'instant');
+      if (mode === 'off') return !!(offTimer?.[key]?.active);
+      if (mode === 'instant') return !!groupStates[key]?.energized;
+      const timer = timerDone[key];
+      return !!(timer && timer.done);
     };
 
     switch (role) {
@@ -267,8 +270,9 @@ export class SimulationEngine {
       case 'fuse':
         return rt.blown ? [] : poles;
       case 'thermal':
-        // 热继电器的常闭触点：脱扣后断开
-        return rt.tripped && type.nc ? [] : poles;
+        // 热继电器触点：常闭过载后断开（切断控制回路），常开（报警）过载后闭合
+        if (type.nc) return rt.tripped ? [] : poles;
+        return rt.tripped ? poles : [];
       case 'passive':
         // 端子、镇流器、热元件、电流表等在逻辑上始终导通
         return poles;
@@ -284,7 +288,7 @@ export class SimulationEngine {
   /**
    * 给定一组触点状态，求解一次电路
    */
-  solve(groupStates, timerDone) {
+  solve(groupStates, timerDone, offTimer) {
     const dsu = new DSU([...this.nets.keys()]);
 
     // 网络标号：同名网络等电位（与导线直连等效）
@@ -300,7 +304,7 @@ export class SimulationEngine {
     const deviceRuntime = {};
     for (const dev of this.devices.values()) {
       const type = this.types[dev.type] || {};
-      const pairs = this.conductionPairs(dev, type, groupStates, timerDone);
+      const pairs = this.conductionPairs(dev, type, groupStates, timerDone, offTimer);
       deviceRuntime[dev.id] = { closed: pairs.length > 0, role: type.role };
       for (const [pa, pb] of pairs) {
         const na = this.pinNet.get(`${dev.id}:${pa}`);
@@ -444,7 +448,7 @@ export class SimulationEngine {
     let solution = null;
 
     while (iter < MAX_ITER) {
-      solution = this.solve(this.groups, this.timerDone);
+      solution = this.solve(this.groups, this.timerDone, this.offTimer);
       let changed = false;
 
       // 1) 线圈得电 → 触点组动作
@@ -461,23 +465,42 @@ export class SimulationEngine {
         // 2) 时间继电器计时（延时秒数可由元件数据或设备属性指定）
         if (type.timer) {
           const delay = Number(dev.props?.delay ?? type.delay ?? 3) * 1000;
-          const timer = this.timerDone[key] || { since: null, done: false };
-          if (energized) {
-            if (timer.since === null) {
-              timer.since = now;
-              timer.done = false;
+          const mode = type.timerMode || 'on';
+          if (mode === 'off') {
+            // 断电延时（缓放）：线圈得电触点立即动作；失电后开始计时，到整定时间才复位
+            const t = this.offTimer[key] || { since: null, active: false };
+            if (energized) {
+              if (!t.active) { t.active = true; changed = true; }
+              if (t.since !== null) { t.since = null; changed = true; }
+            } else if (t.active) {
+              if (t.since === null) t.since = now;
+              if (now - t.since >= delay) {
+                t.active = false;
+                t.since = null;
+                changed = true;
+              }
             }
-            const reached = now - timer.since >= delay;
-            if (reached && !timer.done) {
-              timer.done = true;
+            this.offTimer[key] = t;
+          } else {
+            // 通电延时（缓吸）：线圈得电计时，到整定时间动作；失电立即复位
+            const timer = this.timerDone[key] || { since: null, done: false };
+            if (energized) {
+              if (timer.since === null) {
+                timer.since = now;
+                timer.done = false;
+              }
+              const reached = now - timer.since >= delay;
+              if (reached && !timer.done) {
+                timer.done = true;
+                changed = true;
+              }
+            } else if (timer.since !== null || timer.done) {
+              timer.since = null;
+              timer.done = false;
               changed = true;
             }
-          } else if (timer.since !== null || timer.done) {
-            timer.since = null;
-            timer.done = false;
-            changed = true;
+            this.timerDone[key] = timer;
           }
-          this.timerDone[key] = timer;
         }
       }
 
@@ -527,12 +550,21 @@ export class SimulationEngine {
         energized: !!solution.loads[dev.id]?.energized,
         lit: type.role === 'load' && /lamp|light|tube/i.test(type.symbol || '') ? !!solution.loads[dev.id]?.energized : false,
         motor: solution.loads[dev.id]?.running !== undefined ? solution.loads[dev.id] : undefined,
-        done: !!this.timerDone[groupKeyOf(dev)]?.done,
+        done:
+          type.timerMode === 'off'
+            ? !!this.offTimer[groupKeyOf(dev)]?.active
+            : !!this.timerDone[groupKeyOf(dev)]?.done,
         delay: type.delay ?? null,
-        timerLeft:
-          this.timerDone[groupKeyOf(dev)]?.since != null && !this.timerDone[groupKeyOf(dev)]?.done
-            ? Math.max(0, Number(dev.props?.delay ?? type.delay ?? 3) * 1000 - (now - this.timerDone[groupKeyOf(dev)].since))
-            : null,
+        timerLeft: (() => {
+          const key = groupKeyOf(dev);
+          const d = Number(dev.props?.delay ?? type.delay ?? 3) * 1000;
+          if (type.timerMode === 'off') {
+            const t = this.offTimer[key];
+            return t?.active && t.since != null ? Math.max(0, d - (now - t.since)) : null;
+          }
+          const t = this.timerDone[key];
+          return t?.since != null && !t.done ? Math.max(0, d - (now - t.since)) : null;
+        })(),
       };
     }
 

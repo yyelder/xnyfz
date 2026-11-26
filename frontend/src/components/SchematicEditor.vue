@@ -12,10 +12,17 @@ import { useSimulator } from '../composables/useSimulator.js';
 import { saveCircuit } from '../api.js';
 import CanvasView from './CanvasView.vue';
 import DeviceLibrary from './DeviceLibrary.vue';
+import { translateBusNet } from '../../../shared/render/layout.js';
 
 const props = defineProps({
   work: { type: Object, default: null },
   deviceTypes: { type: Array, default: () => [] },
+  /**
+   * 课程模式：由「课程仿真 › 我的电路」直接打开，编辑的就是课程本身（无编辑副本）。
+   * 保存时保留 kind='course' 与 sourceWorkId / category / order 等课程身份字段，
+   * 并隐藏「加入课程仿真」（课程已经是课程了，再发布只会造出重复项）。
+   */
+  courseMode: { type: Boolean, default: false },
 });
 const emit = defineEmits(['back', 'saved', 'publish']);
 
@@ -393,6 +400,10 @@ function onDevicesMove(payload) {
   const hasMoves = Array.isArray(moves) && moves.length > 0;
   const hasSegs = Array.isArray(segs) && segs.length > 0 && (dx !== 0 || dy !== 0);
   if (!hasMoves && !hasSegs) return;
+  // 框选命中的电源母线：整条网络（主干 + 支线 + 相线文字 + 线号）一起平移，
+  // 并且支线落在元件引脚上的端点保持不动；普通导线仍按「只平移选中的折线」处理。
+  const busIds = [...new Set(segs.filter((s) => s?.bus).map((s) => s.netId))];
+  const plainSegs = segs.filter((s) => !s?.bus);
   commit(() => {
     if (hasMoves) {
       for (const m of moves) {
@@ -403,16 +414,27 @@ function onDevicesMove(payload) {
         }
       }
     }
-    if (hasSegs) {
-      for (const s of segs) {
-        const net = draft.value.nets.find((n) => n.id === s.netId);
-        const poly = net?.geometry?.[s.segIndex];
-        if (Array.isArray(poly)) {
-          // net.geometry[segIndex] 是一条折线 [[x,y], ...]：整条平移，保持折角与长度
-          net.geometry[s.segIndex] = poly.map((pt) => [Math.round(pt[0] + dx), Math.round(pt[1] + dy)]);
-        }
+    for (const id of busIds) translateBusNet(draft.value, props.deviceTypes, id, dx, dy);
+    for (const s of plainSegs) {
+      const net = draft.value.nets.find((n) => n.id === s.netId);
+      const poly = net?.geometry?.[s.segIndex];
+      if (Array.isArray(poly)) {
+        // net.geometry[segIndex] 是一条折线 [[x,y], ...]：整条平移，保持折角与长度
+        net.geometry[s.segIndex] = poly.map((pt) => [Math.round(pt[0] + dx), Math.round(pt[1] + dy)]);
       }
     }
+  });
+}
+
+/** 插入的三相线 / 单相线：在画布上按住整条母线拖动后写回，一次 commit = 一个历史节点 */
+function onBusMove(payload) {
+  if (!draft.value) return;
+  const netId = payload?.netId;
+  const dx = Number(payload?.dx) || 0;
+  const dy = Number(payload?.dy) || 0;
+  if (!netId || (dx === 0 && dy === 0)) return;
+  commit(() => {
+    translateBusNet(draft.value, props.deviceTypes, netId, dx, dy);
   });
 }
 
@@ -1122,7 +1144,8 @@ async function save() {
   try {
     const doc = {
       ...JSON.parse(JSON.stringify(draft.value)),
-      kind: 'work',
+      // 课程模式：保持课程身份，写回同一 id，绝不降级成「作品」或另建副本。
+      kind: props.courseMode ? (draft.value.kind || 'course') : 'work',
       viewType: 'schematic',
       builtin: false,
       updatedAt: Date.now(),
@@ -1135,6 +1158,12 @@ async function save() {
   } finally {
     saving.value = false;
   }
+}
+
+/** 课程模式「完成编辑」：先落盘再返回课程仿真，由上层用最新课程重新打开画布 */
+async function finishCourseEdit() {
+  const saved = await save();
+  if (saved) emit('back');
 }
 
 /* ------------------------------------------------------------ 快捷键 */
@@ -1159,8 +1188,9 @@ function onKey(e) {
   <div class="editor-shell" tabindex="0" @keydown="onKey">
     <!-- 顶部工具栏（对齐竞品：返回/名称/撤销重做/清空/缩放/网格/锁定/运行/保存） -->
     <header class="editor-toolbar">
-      <button class="btn ghost" @click="emit('back')">← 返回</button>
+      <button class="btn ghost" data-op="editor-back" @click="emit('back')">{{ courseMode ? '← 返回课程仿真' : '← 返回' }}</button>
       <input v-if="draft" v-model="draft.title" class="title-input" placeholder="未命名原理图" />
+      <span v-if="courseMode && draft" class="run-badge course-mode-badge" data-course-mode>课程原理图 · 直接编辑原图（无副本）</span>
       <div class="spacer" />
 
       <template v-if="!running && draft">
@@ -1191,10 +1221,12 @@ function onKey(e) {
         </div>
         <div class="tool-group">
           <button
+            v-if="!courseMode"
             class="btn small"
             :title="`加入课程仿真 → ${publishTarget}（可编辑原理说明/操作步骤/考核要点）`"
             @click="publishToCourse"
           >📤 加入课程仿真</button>
+          <button v-else class="btn small" data-op="course-save" title="保存当前修改（仍在编辑器中）" @click="save">💾 保存</button>
           <button class="btn" @click="running = true">▶ 运行仿真</button>
         </div>
       </template>
@@ -1207,7 +1239,12 @@ function onKey(e) {
       </template>
 
       <button class="btn ghost" @click="showTutorial = true">❓ 使用教程</button>
-      <button class="btn primary" :disabled="!draft || saving" @click="save">保存</button>
+      <button
+        class="btn primary"
+        data-op="editor-save"
+        :disabled="!draft || saving"
+        @click="courseMode ? finishCourseEdit() : save()"
+      >{{ courseMode ? '✓ 完成编辑' : '保存' }}</button>
     </header>
 
     <!-- 接线教程弹窗（对齐竞品「使用教程」） -->
@@ -1271,6 +1308,7 @@ function onKey(e) {
           @select-note="(id) => { selectedNote = id; selected = null; selectedIds = []; selectedSegs = []; selectedNet = null; selectedSeg = null; }"
           @marquee-select="onMarqueeSelect"
           @devices-move="onDevicesMove"
+          @bus-move="onBusMove"
           @tag-move="onTagMove"
           @note-move="onNoteMove"
           @note-delete="deleteNote"
@@ -1464,7 +1502,7 @@ function onKey(e) {
                 <button class="btn small" @click="busPhases = defaultPhases('1ph'); addPowerBus('1ph')">插入单相 L/N/PE</button>
                 <button class="btn small primary" @click="addPowerBus('3ph')">按上面配置插入</button>
               </div>
-              <div class="field-hint">母线沿线有接线点位：可从母线任意位置起线接到元件端子。</div>
+              <div class="field-hint">母线沿线有接线点位：可从母线任意位置起线接到元件端子；选择工具下按住母线可整条拖动，支线会自动跟随，Ctrl+Z 可撤销。</div>
             </div>
 
             <div class="palette-cat">接线检查</div>

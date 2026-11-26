@@ -32,8 +32,16 @@ export function pinWorld(dev, type, pinId) {
   };
 }
 
-/** 元件引脚包围盒（局部坐标） */
+/**
+ * 元件包围盒（局部坐标）：默认取引脚范围；
+ * 符号本体比引脚更宽/更高时（如热继电器热元件的整体框），由 type.bbox 显式给出，
+ * 这样选中虚线框、框选命中与标号位置都能贴住真实图形。
+ */
 export function typeBounds(type) {
+  const bb = type?.bbox;
+  if (bb && [bb.minX, bb.maxX, bb.minY, bb.maxY].every((v) => Number.isFinite(v))) {
+    return { minX: bb.minX, maxX: bb.maxX, minY: bb.minY, maxY: bb.maxY };
+  }
   const pins = type?.pins || [];
   if (!pins.length) return { minX: -20, maxX: 20, minY: -20, maxY: 20 };
   const xs = pins.map((p) => p.x);
@@ -261,6 +269,53 @@ export function buildNetGeometry(net, ctx) {
     if (!uniq.some((u) => Math.abs(u.x - j.x) < 0.6 && Math.abs(u.y - j.y) < 0.6)) uniq.push(j);
   }
   return { lines, junctions: uniq, pins };
+}
+
+/**
+ * 平移一整条电源母线（插入的三相线 / 单相线 net.bus=true）。
+ * ------------------------------------------------------------------
+ * - 主干（geometry[0]）与从母线接出的支线全部按 dx/dy 平移，保持母线整体形状；
+ * - 支线中「原本精确落在元件引脚上」的端点保持不动，避免移动母线后支线与元件脱开；
+ * - 相线文字、线号（wireTagPos/tagPos）、网络标号（flagPos）一起平移；
+ * - 母线接线点位（tap）由 geometry 实时生成，平移后自动跟随，无需单独存储。
+ *
+ * 纯函数式地原地修改 circuit.nets 中的对象，返回是否真的移动了（供调用方决定是否压历史）。
+ * 与 DOM 无关，可在 Node 单测中直接调用。
+ */
+export function translateBusNet(circuit, deviceTypes, netId, dx, dy) {
+  const net = (circuit?.nets || []).find((n) => n.id === netId);
+  if (!net || !Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return false;
+
+  // 收集所有元件引脚的世界坐标（走线吸附时端点就是引脚坐标，取整后可精确匹配）
+  const pinPoints = new Set();
+  for (const dev of circuit.devices || []) {
+    const type = (deviceTypes || []).find((t) => t.id === dev.type);
+    for (const p of type?.pins || []) {
+      const w = pinWorld(dev, type, p.id);
+      if (w) pinPoints.add(`${Math.round(w.x)},${Math.round(w.y)}`);
+    }
+  }
+
+  const keyOf = (pt) => `${Math.round(pt[0])},${Math.round(pt[1])}`;
+  net.geometry = (net.geometry || []).map((poly, pidx) =>
+    Array.isArray(poly)
+      ? poly.map((pt) =>
+          // 支线（非主干）里落在元件引脚上的端点保持原位，其余点跟着母线走
+          pidx > 0 && pinPoints.has(keyOf(pt))
+            ? [pt[0], pt[1]]
+            : [Math.round(pt[0] + dx), Math.round(pt[1] + dy)]
+        )
+      : poly
+  );
+
+  if (net.label && Number.isFinite(net.label.x) && Number.isFinite(net.label.y)) {
+    net.label = { ...net.label, x: net.label.x + dx, y: net.label.y + dy };
+  }
+  for (const k of ['wireTagPos', 'tagPos', 'flagPos']) {
+    const p = net[k];
+    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) net[k] = { ...p, x: p.x + dx, y: p.y + dy };
+  }
+  return true;
 }
 
 export default buildNetGeometry;

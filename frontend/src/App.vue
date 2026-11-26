@@ -9,6 +9,8 @@ import StatePanel from './components/StatePanel.vue';
 import EventLog from './components/EventLog.vue';
 import BuildPanel from './components/BuildPanel.vue';
 import WorkbenchView from './components/WorkbenchView.vue';
+import SchematicEditor from './components/SchematicEditor.vue';
+import { translateBusNet } from '../../shared/render/layout.js';
 
 const bundle = ref({ deviceTypes: [], circuits: [], meta: {} });
 const sim = useSimulator();
@@ -199,6 +201,7 @@ async function onCourseDelete(id) {
   renumberCategory(publishedCategoryOf(c));
   saveCatalog();
   if (revealId.value === id) revealId.value = null;
+  if (editingCourseId.value === id) editingCourseId.value = null;
   // 正在演示被删课程时，切到目录中第一门可见课程，避免画布停留在已删除电路
   if (currentId.value === id) {
     const first = visibleCourses()[0];
@@ -372,6 +375,14 @@ function onDeviceMove(id, x, y) {
   if (!dev) return;
   dev.x = x;
   dev.y = y;
+}
+
+/** 插入的三相母线（旧搭建模式）也可整条拖动；支线端点仍保持在元件引脚上 */
+function onBusMove({ netId, dx, dy }) {
+  if (!draft.value || !buildMode.value) return;
+  if (translateBusNet(draft.value, bundle.value.deviceTypes, netId, Number(dx) || 0, Number(dy) || 0)) {
+    sim.rebuild();
+  }
 }
 
 function rotateSelected() {
@@ -578,6 +589,55 @@ const currentCourseEditable = computed(() => {
   return !!(c && c.builtin === false && !buildMode.value);
 });
 
+/* ------------------------------------------------------ 我的电路 · 直接编辑原理图 */
+/**
+ * 课程目录分两区，编辑策略不同：
+ *  - 「✏️ 我的电路」（未加入课程列表的用户课程）→ 直接进完整编辑器编辑原图，
+ *    不复制、不改 id、不改标题，保存写回同一门课程；
+ *  - 「📚 课程电路」（内置课程 + 已加入课程列表的用户课程）→ 保留「编辑副本」，
+ *    复制一份到「我的电路」再改，原课程电路不受影响。
+ * 完整编辑器自带段级删线、说明文本、走线、框选、撤销重做等全部编辑能力。
+ */
+const editingCourseId = ref(null);
+const editingCourse = computed(() =>
+  editingCourseId.value
+    ? bundle.value.circuits.find((c) => c.id === editingCourseId.value) || null
+    : null
+);
+/** 是否属于「我的电路」：用户课程 && 尚未加入课程电路列表 */
+const currentCourseIsMine = computed(() => {
+  if (buildMode.value || !currentId.value) return false;
+  const c = bundle.value.circuits.find((x) => x.id === currentId.value);
+  return !!(c && c.builtin === false && c.kind !== 'work' && !catalog.promoted.includes(c.id));
+});
+function switchView(v) {
+  editingCourseId.value = null;
+  view.value = v;
+}
+function enterCourseEdit() {
+  const c = bundle.value.circuits.find((x) => x.id === currentId.value);
+  if (!c || c.builtin || c.kind === 'work' || catalog.promoted.includes(c.id)) return;
+  buildMode.value = false;
+  armedType.value = null;
+  tool.value = 'select';
+  selected.value = null;
+  selectedNet.value = null;
+  pendingCatalogDelete.value = null;
+  editingCourseId.value = c.id;
+}
+/** 编辑器保存后：用最新课程文档替换资源库中的同一项（课程身份、目录位置都不变） */
+function onCourseEditorSaved(saved) {
+  const idx = bundle.value.circuits.findIndex((c) => c.id === saved.id);
+  if (idx >= 0) bundle.value.circuits.splice(idx, 1, saved);
+  else bundle.value.circuits.push(saved);
+}
+/** 返回课程仿真：用最新内容重新打开该课程，画布 / 说明 / 目录 / 排序立即同步 */
+function backFromCourseEditor() {
+  const id = editingCourseId.value;
+  editingCourseId.value = null;
+  if (id && bundle.value.circuits.some((c) => c.id === id)) openCourse(id);
+}
+
 /* ------------------------------------------------------------ 页面上端：目录操作 */
 /** 当前打开课程在其大类中的位置，驱动顶部「第 N 节 / 上移 / 下移 / 删除」 */
 const currentCatalog = computed(() => {
@@ -618,8 +678,8 @@ watch(currentId, () => { pendingCatalogDelete.value = null; });
       </div>
       <div class="spacer" />
       <div class="view-tabs">
-        <button class="view-tab" :class="{ active: view === 'courses' }" @click="view = 'courses'">课程仿真</button>
-        <button class="view-tab" :class="{ active: view === 'workbench' }" @click="view = 'workbench'">仿真工作台</button>
+        <button class="view-tab" :class="{ active: view === 'courses' }" @click="switchView('courses')">课程仿真</button>
+        <button class="view-tab" :class="{ active: view === 'workbench' }" @click="switchView('workbench')">仿真工作台</button>
       </div>
       <div class="badge" :class="{ live: isDesktop }">{{ isDesktop ? '桌面版 · 资源库已就绪' : '网页版 · 内置资源包' }}</div>
     </header>
@@ -632,6 +692,16 @@ watch(currentId, () => { pendingCatalogDelete.value = null; });
       @saved="onWorkSaved"
       @delete="onWorkDelete"
       @publish="onWorkPublish"
+    />
+
+    <SchematicEditor
+      v-else-if="view === 'courses' && editingCourse"
+      :key="editingCourse.id"
+      :work="editingCourse"
+      :device-types="bundle.deviceTypes"
+      course-mode
+      @back="backFromCourseEditor"
+      @saved="onCourseEditorSaved"
     />
 
     <div v-else class="app-body">
@@ -660,7 +730,20 @@ watch(currentId, () => { pendingCatalogDelete.value = null; });
             <button class="btn" @click="sim.reset(); canvasRef?.fit?.()">复位电路</button>
             <button class="btn" @click="rightTab = 'state'">元件状态</button>
             <button class="btn" @click="rightTab = 'log'">运行日志</button>
-            <button class="btn" @click="editAsCopy">编辑副本</button>
+            <button
+              v-if="currentCourseIsMine"
+              class="btn"
+              data-op="edit-course"
+              title="直接编辑本课程原理图：改动保存到原课程，不创建副本"
+              @click="enterCourseEdit"
+            >✏️ 编辑原理图</button>
+            <button
+              v-else
+              class="btn"
+              data-op="edit-copy"
+              title="把当前课程电路复制一份到「我的电路」，在副本上编辑（原课程不变）"
+              @click="editAsCopy"
+            >编辑副本</button>
           </template>
           <template v-else>
             <div class="tool-group">
@@ -735,6 +818,7 @@ watch(currentId, () => { pendingCatalogDelete.value = null; });
           @pin-click="onPinClick"
           @place="onPlace"
           @device-move="onDeviceMove"
+          @bus-move="onBusMove"
           @device-delete="deleteSelected"
           @wire-finish="onWireFinish"
         />
